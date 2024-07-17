@@ -1,0 +1,4 @@
+
+
+class StockxApiException(Exception):
+    pass
