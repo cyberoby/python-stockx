@@ -1,8 +1,5 @@
-import asyncio
-import json
-from typing import List, Dict, Union
-
 import aiohttp
+import asyncio
 
 from exceptions import StockxApiException
 from models import Response
@@ -19,7 +16,7 @@ AUDIENCE = 'gateway.stockx.com'
 HOSTNAME = 'api.stockx.com'
 VERSION = 'v2'
 
-class RestAdapter:
+class StockXAPIClient:
     
     def __init__(
             self,
@@ -111,17 +108,7 @@ class RestAdapter:
                     'Authorization': f'Bearer {token}',
                     'x-api-key': X_API_KEY
                 }
+            
 
-
-async def main() -> None:
-    rest = RestAdapter(HOSTNAME, VERSION)
-    await rest.initialize()
-
-    r = await rest.get('/selling/orders/active')
-    print(r)
-    await rest.close()
-
-
-asyncio.run(main())
 
             
