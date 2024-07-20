@@ -53,17 +53,21 @@ class RestAdapter:
             data: dict = None
     ) -> Response:
         url = f'{self.url}{endpoint}'
-        async with self._session.request(
-            method,
-            url,
-            params=params,
-            json=data,  
-            verify_ssl = self._verify_ssl
-        ) as response:
-            res = await response.json()
-            if 299 >= response.status >= 200:
-                return Response(status_code=response.status, message=response.reason, data=res)
-            raise Exception(res['message']) # Todo: raise custom exception
+        try:
+            async with self._session.request(
+                method,
+                url,
+                params=params,
+                json=data,  
+                verify_ssl = self._verify_ssl
+            ) as response:
+                res = await response.json()
+                if 299 >= response.status >= 200:
+                    return Response(status_code=response.status, 
+                                    message=response.reason, data=res)
+                raise Exception(res['message'])
+        except aiohttp.ClientError as e:
+            raise StockxApiException('Request failed') from e
         
     async def get(
             self, endpoint: str, params: dict = None
@@ -81,7 +85,6 @@ class RestAdapter:
         return await self._do('DELETE', endpoint, params=params)
         
 
-        
     async def _refresh_session(self) -> None:
         while True:
             if self._session: 
@@ -100,7 +103,8 @@ class RestAdapter:
             'refresh_token': REFRESH_TOKEN
         }
         async with aiohttp.ClientSession() as session:
-            async with session.post(REFRESH_URL, headers=headers, data=refresh_data) as response:
+            async with session.post(REFRESH_URL, headers=headers, 
+                                    data=refresh_data) as response:
                 payload = await response.json()
                 token = payload['access_token']
                 return {
@@ -110,7 +114,6 @@ class RestAdapter:
 
 
 async def main() -> None:
-
     rest = RestAdapter(HOSTNAME, VERSION)
     await rest.initialize()
 
