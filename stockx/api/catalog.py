@@ -1,6 +1,6 @@
 from typing import AsyncIterator
 
-from stockx.models import (
+from stockx.models.core import (
     Product, 
     Variant, 
     MarketData
@@ -48,9 +48,7 @@ class Catalog(StockXAPI):
     async def search_catalog(
             self, query: str, limit: int = None, page_size: int = 10
     ) -> AsyncIterator[Product]:
-        params = {
-            'query': query
-        }
+        params = {'query': query}
         async for product in self._page(
             endpoint='/catalog/search', 
             results_key='products',

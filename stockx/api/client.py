@@ -2,7 +2,7 @@ import aiohttp
 import asyncio
 
 from stockx.exceptions import StockXAPIException
-from stockx.models import Response
+from stockx.models.base import Response
 
 TOKEN = '***REMOVED***'
 GRANT_TYPE = 'refresh_token'
@@ -16,18 +16,15 @@ AUDIENCE = 'gateway.stockx.com'
 HOSTNAME = 'api.stockx.com'
 VERSION = 'v2'
 
+
 class StockXAPIClient:
     
     def __init__(
             self,
             hostname: str,
-            version: str,
-            _verify_ssl: bool = True,
+            version: str
     ) -> None:
         self.url = f'https://{hostname}/{version}'
-        self._verify_ssl = _verify_ssl
-        if not _verify_ssl:
-            pass    # Todo: ssl verification for aiohttp
         
         self._is_initialized: bool = False
         self._session: aiohttp.ClientSession = None
@@ -35,7 +32,7 @@ class StockXAPIClient:
 
     async def initialize(self) -> None:
         self._refresh_task = asyncio.create_task(self._refresh_session())
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
 
     async def close(self) -> None:
         if self._session:
@@ -52,20 +49,22 @@ class StockXAPIClient:
     ) -> Response:
         if not self._is_initialized:
             raise StockXAPIException('Client must be initialized before making requests')
+        if params:
+            params = {k: v for k, v in params.items() if v is not None}
+
         url = f'{self.url}{endpoint}'
         try:
             async with self._session.request(
                 method,
                 url,
                 params=params,
-                json=data,  
-                verify_ssl = self._verify_ssl
+                json=data
             ) as response:
                 res = await response.json()
                 if 299 >= response.status >= 200:
                     return Response(status_code=response.status, 
                                     message=response.reason, data=res)
-                raise Exception(res['message'])
+                raise Exception(res['errorMessage'])
         except aiohttp.ClientError as e:
             raise StockXAPIException('Request failed') from e
         
@@ -84,7 +83,6 @@ class StockXAPIClient:
     ) -> Response:
         return await self._do('DELETE', endpoint, params=params)
         
-
     async def _refresh_session(self) -> None:
         while True:
             if self._session: 
