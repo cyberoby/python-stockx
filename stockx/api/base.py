@@ -1,4 +1,3 @@
-import asyncio
 from typing import AsyncIterator
 
 from stockx.api.client import StockXAPIClient

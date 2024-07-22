@@ -275,3 +275,8 @@ class ListingPartial(StockXBaseModel):
         ('variant', VariantShort),
         ('authentication_details', AuthenticationDetails)
     )
+
+
+@dataclass
+class Batch(StockXBaseModel):
+    pass

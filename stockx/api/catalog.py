@@ -1,10 +1,6 @@
 from typing import AsyncIterator
 
-from stockx.models.core import (
-    Product, 
-    Variant, 
-    MarketData
-)
+from stockx.models.core import Product, Variant, MarketData
 
 from stockx.api.base import StockXAPI
 
