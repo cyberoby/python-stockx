@@ -2,6 +2,7 @@ import asyncio
 from stockx.api.client import StockXAPIClient
 from stockx.api.catalog import Catalog
 from stockx.api.orders import Orders
+from stockx.api.listings import Listings
 
 import json
 
@@ -13,16 +14,16 @@ async def main() -> None:
     await client.initialize()
     catalog = Catalog(client)
     orders = Orders(client)
+    listings = Listings(client)
 
     # product = await catalog.get_product('da36823e-0d43-4ca4-a334-ce485c582948')
     # print(product)
 
-    print('------------ORDERS--------------\n')
-    async for order in orders.get_orders_history(
-        from_date=datetime.fromisoformat('2024-01-01'), 
+    print('------------LISTINGS--------------\n')
+    async for listing in listings.get_all_listings(
         limit=2
     ):
-        print(order)
+        print(listing)
         print('\n--------------------------------\n')
         await asyncio.sleep(3)
 

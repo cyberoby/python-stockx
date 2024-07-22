@@ -12,15 +12,15 @@ from stockx.api.base import StockXAPI
 class Catalog(StockXAPI):
     
     async def get_product(
-            self, product_id: str
+            self, 
+            product_id: str
     ) -> Product:
-        response = await self.client.get(
-            f'/catalog/products/{product_id}'
-        )
+        response = await self.client.get(f'/catalog/products/{product_id}')
         return Product.from_json(response.data)
     
     async def get_all_product_variants(
-            self, product_id: str
+            self, 
+            product_id: str
     ) -> list[Variant]:
         response = await self.client.get(
             f'/catalog/products/{product_id}/variants'
@@ -28,7 +28,9 @@ class Catalog(StockXAPI):
         return [Variant.from_json(item) for item in response.data]
     
     async def get_product_variant(
-            self, product_id: str, variant_id: str
+            self, 
+            product_id: str, 
+            variant_id: str
     ) -> Variant:
         response = await self.client.get(
             f'/catalog/products/{product_id}/variants/{variant_id}'
@@ -36,7 +38,10 @@ class Catalog(StockXAPI):
         return Variant.from_json(response.data)
     
     async def get_variant_market_data(
-            self, product_id: str, variant_id: str, currency_code: str
+            self, 
+            product_id: str, 
+            variant_id: str, 
+            currency_code: str
     ) -> MarketData:
         params = {'currencyCode': currency_code}    
         response = await self.client.get(
@@ -46,7 +51,10 @@ class Catalog(StockXAPI):
         return MarketData.from_json(response)
     
     async def search_catalog(
-            self, query: str, limit: int = None, page_size: int = 10
+            self, 
+            query: str, 
+            limit: int = None, 
+            page_size: int = 10
     ) -> AsyncIterator[Product]:
         params = {'query': query}
         async for product in self._page(

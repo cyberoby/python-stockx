@@ -64,8 +64,11 @@ class StockXAPIClient:
     ) -> Response:
         if not self._is_initialized:
             raise StockXAPIException('Client must be initialized before making requests')
+        
         if params:
             params = {k: v for k, v in params.items() if v is not None}
+        if data:
+            data = {k: v for k, v in data.items() if v is not None}
 
         url = f'{self.url}{endpoint}'
         try:
@@ -102,8 +105,9 @@ class StockXAPIClient:
             'refresh_token': REFRESH_TOKEN
         }
         async with aiohttp.ClientSession() as session:
-            async with session.post(REFRESH_URL, headers=headers, 
-                                    data=refresh_data) as response:
+            async with session.post(
+                REFRESH_URL, headers=headers, data=refresh_data
+            ) as response:
                 payload = await response.json()
                 token = payload['access_token']
                 return {

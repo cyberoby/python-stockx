@@ -11,9 +11,7 @@ class Orders(StockXAPI):
             self, 
             order_number: str
     ) -> Order:
-        response = await self.client.get(
-            f'/selling/orders/{order_number}'
-        )
+        response = await self.client.get(f'/selling/orders/{order_number}')
         return Order.from_json(response.data)
 
     async def get_orders_history(

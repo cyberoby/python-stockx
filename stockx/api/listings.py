@@ -11,9 +11,7 @@ class Listings(StockXAPI):
             self, 
             listing_id: str
     ) -> Listing:
-        response = await self.client.get(
-            f'/selling/listings/{listing_id}'
-        )
+        response = await self.client.get(f'/selling/listings/{listing_id}')
         return Listing.from_json(response.data)
 
     async def get_all_listings(
@@ -46,44 +44,93 @@ class Listings(StockXAPI):
 
     async def create_listing(
             self,
-            amount: float
+            amount: float,
+            variant_id: str,
+            currency_code: str = None,
+            expires_at: datetime = None,
+            active: bool = None
     ) -> Operation:
-        pass
+        data = {
+            'amount': f'{amount:.0f}',
+            'variantId': variant_id,
+            'currencyCode': currency_code,
+            'expiresAt': expires_at,
+            'active': active
+        }
+        response = await self.client.post(f'/selling/listings', data=data)
+        return Operation.from_json(response.data)
 
     async def activate_listing(
             self, 
             listing_id: str,
+            amount: float,   # required???
+            currency_code: str = None,
+            expires_at: datetime = None
     ) -> Operation:
-        pass
+        data = {
+            'amount': f'{amount:.0f}',
+            'currencyCode': currency_code,
+            'expiresAt': expires_at
+        }
+        response = await self.client.put(
+            f'/selling/listings/{listing_id}/activate', data=data
+        )
+        return Operation.from_json(response.data)
 
     async def deactivate_listing(
             self, 
             listing_id: str
     ) -> Operation:
-        pass
+        response = await self.client.put(
+            f'/selling/listings/{listing_id}/deactivate'
+        )
+        return Operation.from_json(response.data)
 
     async def update_listing(
             self,
             listing_id: str,
+            amount: float = None,
+            currency_code: str = None,
+            expires_at: datetime = None,
     ) -> Operation:
-        pass
+        data = {
+            'amount': f'{amount:.0f}',
+            'currencyCode': currency_code,
+            'expiresAt': expires_at
+        }
+        response = await self.client.patch(
+            f'/selling/listings/{listing_id}', data=data
+        )
+        return Operation.from_json(response.data)
 
     async def delete_listing(
             self, 
             listing_id: str
     ) -> Operation:
-        pass
+        response = await self.client.delete(f'/selling/listings/{listing_id}')
+        return Operation.from_json(response.data)
     
     async def get_listing_operation(
             self, 
             listing_id: str, 
             operation_id: str
     ) -> Operation:
-        pass
+        response = await self.client.delete(
+            f'/selling/listings/{listing_id}/operations/{operation_id}'
+        )
+        return Operation.from_json(response.data)
 
     async def get_all_listing_operations(
             self,
-            listing_id: str
+            listing_id: str,
+            limit: int = None,
+            page_size: int = 10
     ) -> AsyncIterator[Operation]:
-        pass
+        async for operation in self._page_cursor(
+            endpoint=f'/selling/listings/{listing_id}/operations',
+            results_key='operations',
+            limit=limit,
+            page_size=page_size
+        ):
+            yield Operation.from_json(operation)
 
