@@ -39,6 +39,21 @@ class StockXAPIClient:
             await self._session.close()
         if self._refresh_task:
             self._refresh_task.cancel()
+        
+    async def get(self, endpoint: str, params: dict = None) -> Response:
+        return await self._do('GET', endpoint, params=params)
+    
+    async def put(self, endpoint: str, data: dict = None) -> Response:
+        return await self._do('PUT', endpoint, data=data)
+    
+    async def post(self, endpoint: str, data: dict = None) -> Response:
+        return await self._do('POST', endpoint, data=data)
+
+    async def patch(self, endpoint: str, data: dict = None) -> Response:
+        return await self._do('PATCH', endpoint, data=data)
+    
+    async def delete(self, endpoint: str) -> Response:
+        return await self._do('DELETE', endpoint)
     
     async def _do(
             self, 
@@ -67,21 +82,6 @@ class StockXAPIClient:
                 raise Exception(res['errorMessage'])
         except aiohttp.ClientError as e:
             raise StockXAPIException('Request failed') from e
-        
-    async def get(
-            self, endpoint: str, params: dict = None
-    ) -> Response:
-        return await self._do('GET', endpoint, params=params)
-    
-    async def post(
-            self, endpoint: str, params: dict = None, data: dict = None
-    ) -> Response:
-        return await self._do('POST', endpoint, params=params, data=data)
-
-    async def delete(
-            self, endpoint: str, params: dict = None
-    ) -> Response:
-        return await self._do('DELETE', endpoint, params=params)
         
     async def _refresh_session(self) -> None:
         while True:
