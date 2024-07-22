@@ -1,2 +1,0 @@
-class StockxApiException(Exception):
-    pass

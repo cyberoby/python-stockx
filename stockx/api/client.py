@@ -1,8 +1,8 @@
 import aiohttp
 import asyncio
 
-from exceptions import StockxApiException
-from models import Response
+from stockx.exceptions import StockXAPIException
+from stockx.models import Response
 
 TOKEN = '***REMOVED***'
 GRANT_TYPE = 'refresh_token'
@@ -28,7 +28,8 @@ class StockXAPIClient:
         self._verify_ssl = _verify_ssl
         if not _verify_ssl:
             pass    # Todo: ssl verification for aiohttp
-
+        
+        self._is_initialized: bool = False
         self._session: aiohttp.ClientSession = None
         self._refresh_task: asyncio.Task = None
 
@@ -49,6 +50,8 @@ class StockXAPIClient:
             params: dict = None,
             data: dict = None
     ) -> Response:
+        if not self._is_initialized:
+            raise StockXAPIException('Client must be initialized before making requests')
         url = f'{self.url}{endpoint}'
         try:
             async with self._session.request(
@@ -64,7 +67,7 @@ class StockXAPIClient:
                                     message=response.reason, data=res)
                 raise Exception(res['message'])
         except aiohttp.ClientError as e:
-            raise StockxApiException('Request failed') from e
+            raise StockXAPIException('Request failed') from e
         
     async def get(
             self, endpoint: str, params: dict = None
@@ -88,6 +91,7 @@ class StockXAPIClient:
                 await self._session.close()
             headers = await self._refresh_token()
             self._session = aiohttp.ClientSession(headers=headers)
+            self._is_initialized = True
             await asyncio.sleep(REFRESH_TIME)
 
     async def _refresh_token(self) -> dict:
@@ -109,6 +113,5 @@ class StockXAPIClient:
                     'x-api-key': X_API_KEY
                 }
             
-
 
             

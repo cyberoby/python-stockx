@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from utils import json_to_snake
+from stockx.utils import json_to_snake
 
 
 @dataclass
