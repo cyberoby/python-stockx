@@ -2,13 +2,14 @@ from datetime import datetime
 from typing import AsyncIterator
 
 from stockx.api.base import StockXAPI
-from stockx.models.core import Order, OrderShort
+from stockx.models.core import Order, OrderPartial
 
 
 class Orders(StockXAPI):
     
     async def get_order(
-            self, order_number: str
+            self, 
+            order_number: str
     ) -> Order:
         response = await self.client.get(
             f'/selling/orders/{order_number}'
@@ -24,7 +25,7 @@ class Orders(StockXAPI):
             variant_id: str = None, 
             limit: int = None, 
             page_size: int = 10
-    ) -> AsyncIterator[OrderShort]:
+    ) -> AsyncIterator[OrderPartial]:
         params = {
             'fromDate': str(datetime.date(from_date)) if from_date else None,
             'toDate': str(datetime.date(to_date)) if to_date else None,
@@ -39,7 +40,7 @@ class Orders(StockXAPI):
             limit=limit,
             page_size=page_size
         ):
-            yield OrderShort.from_json(order)
+            yield OrderPartial.from_json(order)
 
     async def get_active_orders(
             self,
@@ -49,7 +50,7 @@ class Orders(StockXAPI):
             sort_order: str = None, 
             limit: int = None, 
             page_size: int = 10
-    ) -> AsyncIterator[OrderShort]:
+    ) -> AsyncIterator[OrderPartial]:
         params = {
             'orderStatus': order_status,
             'productId': product_id,
@@ -63,4 +64,4 @@ class Orders(StockXAPI):
             limit=limit,
             page_size=page_size
         ):
-            yield OrderShort.from_json(order)
+            yield OrderPartial.from_json(order)

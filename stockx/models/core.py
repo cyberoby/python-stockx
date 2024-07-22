@@ -159,7 +159,7 @@ class Order(StockXBaseModel):
 
 
 @dataclass
-class OrderShort(StockXBaseModel):
+class OrderPartial(StockXBaseModel):
     order_number: str
     listing_id: str
     amount: float
@@ -184,4 +184,94 @@ class OrderShort(StockXBaseModel):
         ('product', ProductShort),
         ('authentication_details', AuthenticationDetails),
         ('payout', Payout),
+    )
+
+
+@dataclass
+class OrderShort(StockXBaseModel):
+    order_number: str
+    order_status: str = ''
+    order_created_at: datetime = None
+
+    _datetime_fields = (
+        'order_created_at',
+    )
+
+
+@dataclass
+class Operation(StockXBaseModel):
+    listing_id: str
+    operation_id: str
+    operation_type: str
+    operation_status: str
+    operation_initiated_by: str = ''
+    operation_initiated_via: str = ''
+    created_at: datetime = None
+    updated_at: datetime = None
+        
+    _datetime_fields = (
+        'created_at',
+        'updated_at'
+    )
+
+
+@dataclass
+class Listing(StockXBaseModel):
+    listing_id: str
+    status: str
+    amount: float
+    currency_code: str
+    inventory_type: str = ''
+    order: OrderShort = None
+    product: ProductShort = None
+    variant: VariantShort = None
+    authentication_details: AuthenticationDetails = None
+    payout: Payout = None
+    last_operation: Operation = None
+    created_at: datetime = None
+    updated_at: datetime = None
+
+    _numeric_fields = (
+        'amount',
+    )
+    _datetime_fields = (
+        'created_at',
+        'updated_at'
+    )
+    _object_fields = (
+        ('order', OrderShort),
+        ('product', ProductShort),
+        ('variant', VariantShort),
+        ('authentication_details', AuthenticationDetails),
+        ('payout', Payout),
+        ('last_operation', Operation)
+    )
+
+
+@dataclass
+class ListingPartial(StockXBaseModel):
+    listing_id: str
+    status: str
+    amount: float
+    currency_code: str
+    inventory_type: str = ''
+    order: OrderShort = None
+    product: ProductShort = None
+    variant: VariantShort = None
+    authentication_details: AuthenticationDetails = None
+    created_at: datetime = None
+    updated_at: datetime = None
+
+    _numeric_fields = (
+        'amount',
+    )
+    _datetime_fields = (
+        'created_at',
+        'updated_at'
+    )
+    _object_fields = (
+        ('order', OrderShort),
+        ('product', ProductShort),
+        ('variant', VariantShort),
+        ('authentication_details', AuthenticationDetails)
     )
