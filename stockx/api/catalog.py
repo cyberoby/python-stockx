@@ -1,11 +1,14 @@
 from typing import AsyncIterator
 
-from stockx.models.core import Product, Variant, MarketData
+from stockx.api.base import StockXAPIBase
+from stockx.models.core import (
+    Product, 
+    Variant, 
+    MarketData,
+)
 
-from stockx.api.base import StockXAPI
 
-
-class Catalog(StockXAPI):
+class Catalog(StockXAPIBase):
     
     async def get_product(
             self, 

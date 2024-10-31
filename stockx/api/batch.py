@@ -1,8 +1,8 @@
-from stockx.api.base import StockXAPI
+from stockx.api.base import StockXAPIBase
 from stockx.models.core import Batch
 
 
-class Batch(StockXAPI):
+class Batch(StockXAPIBase):
 
     async def listings_creation(
             self,

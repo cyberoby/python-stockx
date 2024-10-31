@@ -63,7 +63,7 @@ class StockXAPIClient:
             data: dict = None
     ) -> Response:
         if not self._is_initialized:
-            raise StockXAPIException('Client must be initialized before making requests')
+            raise StockXAPIException('Client must be initialized before making requests.')
         
         if params:
             params = {k: v for k, v in params.items() if v is not None}
@@ -78,20 +78,23 @@ class StockXAPIClient:
                 params=params,
                 json=data
             ) as response:
-                res = await response.json()
+                data = await response.json()
                 if 299 >= response.status >= 200:
-                    return Response(status_code=response.status, 
-                                    message=response.reason, data=res)
-                raise Exception(res['errorMessage'])
+                    return Response(
+                        status_code=response.status, 
+                        message=response.reason, 
+                        data=data
+                    )
+                raise Exception(data['errorMessage']) # TODO: should include response object in the exception?
         except aiohttp.ClientError as e:
-            raise StockXAPIException('Request failed') from e
+            raise StockXAPIException('Request failed') from e # TODO custom exceptions
         
     async def _refresh_session(self) -> None:
         while True:
             if self._session: 
-                await self._session.close()
+                await self._session.close() # TODO: don't close session, just change token
             headers = await self._refresh_token()
-            self._session = aiohttp.ClientSession(headers=headers)
+            self._session = aiohttp.ClientSession(headers=headers) 
             self._is_initialized = True
             await asyncio.sleep(REFRESH_TIME)
 

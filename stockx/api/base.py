@@ -2,8 +2,8 @@ from typing import AsyncIterator
 
 from stockx.api.client import StockXAPIClient
 
-
-class StockXAPI:
+# TODO: fix type hints
+class StockXAPIBase:
 
     def __init__(self, client: StockXAPIClient) -> None:
         self.client = client
@@ -64,11 +64,11 @@ class StockXAPI:
 
     @staticmethod
     def _check(count: int, limit: int) -> bool:
-        return count < limit if limit is not None else True
+        return count < limit if limit else True
     
     @staticmethod
     def _set_params(params: dict, page_size: int) -> dict:
-        params = params if params is not None else {}
+        params = params if params else {}
         params['pageSize'] = page_size
         return params
 

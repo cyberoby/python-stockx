@@ -5,24 +5,17 @@ from datetime import datetime
 from stockx.models.base import StockXBaseModel
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class ProductAttributes(StockXBaseModel):
     gender: str = ''
     season: str = ''
     release_date: str = ''
-    retail_price: float = 0
+    retail_price: float | None = None
     colorway: str = ''
     color: str = ''
 
-    _numeric_fields = (
-        'retail_price',
-    )
-    _datetime_fields = (
-        'release_date',
-    )
 
-
-@dataclass
+@dataclass(frozen=True, slots=True)
 class Product(StockXBaseModel):
     product_id: str
     url_key: str = ''
@@ -30,21 +23,17 @@ class Product(StockXBaseModel):
     product_type: str = ''
     title: str = ''
     brand: str = ''
-    product_attributes: ProductAttributes = None
-
-    _object_fields = (
-        ('product_attributes', ProductAttributes),
-    )
+    product_attributes: ProductAttributes | None = None
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class ProductShort(StockXBaseModel):
     product_id: str
     product_name: str = ''
     style_id: str = ''
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class Variant(StockXBaseModel):
     variant_id: str
     product_id: str
@@ -52,14 +41,14 @@ class Variant(StockXBaseModel):
     variant_value: str = ''
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class VariantShort(StockXBaseModel):
     variant_id: str
     variant_name: str = ''
     variant_value: str = ''    
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class MarketData(StockXBaseModel):
     product_id: str
     variant_id: str
@@ -69,47 +58,31 @@ class MarketData(StockXBaseModel):
     sell_faster_amount: float = 0
     earn_more_amount: float = 0
     
-    _numeric_fields = (
-        'lowest_ask_amount', 
-        'highest_bid_amount',
-        'sell_faster_amount',
-        'earn_more_amount',
-    )
 
-
-@dataclass
+@dataclass(frozen=True, slots=True)
 class Shipment(StockXBaseModel):
     tracking_number: str
-    ship_by_date: datetime = None
+    ship_by_date: datetime | None = None
     tracking_url: str = ''
     carrier_code: str = ''
     shipping_label_url: str = ''
     shipping_document_url: str = ''
 
-    _datetime_fields = (
-        'ship_by_date',
-    )
 
-
-@dataclass
+@dataclass(frozen=True, slots=True)
 class AuthenticationDetails(StockXBaseModel):
     status: str = ''
     failure_notes: str = ''
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class Adjustments(StockXBaseModel):
     adjustment_type: str = ''
     amount: float = 0
     percentage: float = 0
 
-    _numeric_fields = (
-        'amount',
-        'percentage',
-    )
 
-
-@dataclass
+@dataclass(frozen=True, slots=True)
 class Payout(StockXBaseModel):
     total_payout: float
     sale_price: float = 0
@@ -117,88 +90,46 @@ class Payout(StockXBaseModel):
     currency_code: str = ''
     adjustments: list[Adjustments] = field(default_factory=list)
 
-    _numeric_fields = (
-        'total_payout',
-        'sale_price',
-        'total_adjustments',
-    )
-    _list_fields = (
-        ('adjustments', Adjustments),
-    )
 
-
-@dataclass
+@dataclass(frozen=True, slots=True)
 class Order(StockXBaseModel):
     order_number: str
     listing_id: str
     amount: float
     status: str
     currency_code: str
-    variant: VariantShort = None
-    product: ProductShort = None
-    shipment: Shipment = None
-    authentication_details: AuthenticationDetails = None
-    payout: Payout = None
-    created_at: datetime = None
-    updated_at: datetime = None
-
-    _numeric_fields = (
-        'amount',
-    )
-    _datetime_fields = (
-        'created_at',
-        'updated_at'
-    )
-    _object_fields = (
-        ('variant', VariantShort),
-        ('product', ProductShort),
-        ('shipment', Shipment),
-        ('authentication_details', AuthenticationDetails),
-        ('payout', Payout),
-    )
+    product: ProductShort
+    variant: VariantShort | None = None
+    shipment: Shipment | None = None
+    authentication_details: AuthenticationDetails | None = None
+    payout: Payout | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class OrderPartial(StockXBaseModel):
     order_number: str
     listing_id: str
     amount: float
     status: str
     currency_code: str
-    variant: VariantShort = None
-    product: ProductShort = None
+    product: ProductShort | None = None
+    variant: VariantShort | None = None
     authentication_details: AuthenticationDetails = None
-    payout: Payout = None
-    created_at: datetime = None
-    updated_at: datetime = None
-
-    _numeric_fields = (
-        'amount',
-    )
-    _datetime_fields = (
-        'created_at',
-        'updated_at'
-    )
-    _object_fields = (
-        ('variant', VariantShort),
-        ('product', ProductShort),
-        ('authentication_details', AuthenticationDetails),
-        ('payout', Payout),
-    )
+    payout: Payout | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class OrderShort(StockXBaseModel):
     order_number: str
     order_status: str = ''
-    order_created_at: datetime = None
-
-    _datetime_fields = (
-        'order_created_at',
-    )
+    order_created_at: datetime | None = None
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class Operation(StockXBaseModel):
     listing_id: str
     operation_id: str
@@ -206,77 +137,42 @@ class Operation(StockXBaseModel):
     operation_status: str
     operation_initiated_by: str = ''
     operation_initiated_via: str = ''
-    created_at: datetime = None
-    updated_at: datetime = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
         
-    _datetime_fields = (
-        'created_at',
-        'updated_at'
-    )
 
-
-@dataclass
+@dataclass(frozen=True, slots=True)
 class Listing(StockXBaseModel):
     listing_id: str
     status: str
     amount: float
     currency_code: str
+    product: ProductShort
+    variant: VariantShort | None = None
     inventory_type: str = ''
-    order: OrderShort = None
-    product: ProductShort = None
-    variant: VariantShort = None
-    authentication_details: AuthenticationDetails = None
-    payout: Payout = None
-    last_operation: Operation = None
-    created_at: datetime = None
-    updated_at: datetime = None
-
-    _numeric_fields = (
-        'amount',
-    )
-    _datetime_fields = (
-        'created_at',
-        'updated_at'
-    )
-    _object_fields = (
-        ('order', OrderShort),
-        ('product', ProductShort),
-        ('variant', VariantShort),
-        ('authentication_details', AuthenticationDetails),
-        ('payout', Payout),
-        ('last_operation', Operation)
-    )
+    order: OrderShort | None = None
+    authentication_details: AuthenticationDetails | None = None
+    payout: Payout | None = None
+    last_operation: Operation | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class ListingPartial(StockXBaseModel):
     listing_id: str
     status: str
     amount: float
     currency_code: str
+    product: ProductShort
+    variant: VariantShort | None = None
     inventory_type: str = ''
-    order: OrderShort = None
-    product: ProductShort = None
-    variant: VariantShort = None
-    authentication_details: AuthenticationDetails = None
-    created_at: datetime = None
-    updated_at: datetime = None
-
-    _numeric_fields = (
-        'amount',
-    )
-    _datetime_fields = (
-        'created_at',
-        'updated_at'
-    )
-    _object_fields = (
-        ('order', OrderShort),
-        ('product', ProductShort),
-        ('variant', VariantShort),
-        ('authentication_details', AuthenticationDetails)
-    )
+    order: OrderShort | None = None
+    authentication_details: AuthenticationDetails | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class Batch(StockXBaseModel):
     pass

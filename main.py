@@ -1,8 +1,12 @@
 import asyncio
+
+from stockx.api import (
+    Catalog,
+    Orders,
+    Listings,
+    Batch,
+)
 from stockx.api.client import StockXAPIClient
-from stockx.api.catalog import Catalog
-from stockx.api.orders import Orders
-from stockx.api.listings import Listings
 
 import json
 
@@ -16,15 +20,15 @@ async def main() -> None:
     orders = Orders(client)
     listings = Listings(client)
 
-    # product = await catalog.get_product('da36823e-0d43-4ca4-a334-ce485c582948')
-    # print(product)
+    product = await catalog.get_product('da36823e-0d43-4ca4-a334-ce485c582948')
+    print(product)
 
-    print('------------LISTINGS--------------\n')
+    # print('------------LISTINGS--------------\n')
     async for listing in listings.get_all_listings(
-        limit=2
+        limit=1
     ):
         print(listing)
-        print('\n--------------------------------\n')
+        # print('\n--------------------------------\n')
         await asyncio.sleep(3)
 
 

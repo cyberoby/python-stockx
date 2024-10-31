@@ -1,11 +1,15 @@
 from datetime import datetime
 from typing import AsyncIterator
 
-from stockx.api.base import StockXAPI
-from stockx.models.core import Listing, ListingPartial, Operation
+from stockx.api.base import StockXAPIBase
+from stockx.models.core import (
+    Listing, 
+    ListingPartial, 
+    Operation,
+)
 
 
-class Listings(StockXAPI):
+class Listings(StockXAPIBase):
 
     async def get_listing(
             self, 
@@ -63,7 +67,7 @@ class Listings(StockXAPI):
     async def activate_listing(
             self, 
             listing_id: str,
-            amount: float,   # required???
+            amount: float,   # TODO required???
             currency_code: str = None,
             expires_at: datetime = None
     ) -> Operation:

@@ -1,11 +1,11 @@
 from datetime import datetime
 from typing import AsyncIterator
 
-from stockx.api.base import StockXAPI
+from stockx.api.base import StockXAPIBase
 from stockx.models.core import Order, OrderPartial
 
 
-class Orders(StockXAPI):
+class Orders(StockXAPIBase):
     
     async def get_order(
             self, 
