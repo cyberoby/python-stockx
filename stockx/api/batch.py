@@ -1,18 +1,18 @@
 from stockx.api.base import StockXAPIBase
-from stockx.models.core import Batch
+from stockx.models.core import BatchStatus
 
 
 class Batch(StockXAPIBase):
 
     async def listings_creation(
             self,
-    ) -> Batch:
+    ) -> BatchStatus:
         pass
 
     async def listings_creation_status(
             self,
             batch_id: str
-    ) -> Batch:
+    ) -> BatchStatus:
         pass
     
     async def listings_creation_items(
@@ -24,13 +24,13 @@ class Batch(StockXAPIBase):
 
     async def listings_deletion(
             self,
-    ) -> Batch:
+    ) -> BatchStatus:
         pass
 
     async def listings_deletion_status(
             self,
             batch_id: str
-    ) -> Batch:
+    ) -> BatchStatus:
         pass
 
     async def listing_deletion_items(
@@ -42,13 +42,13 @@ class Batch(StockXAPIBase):
 
     async def listing_update(
             self,
-    ) -> Batch:
+    ) -> BatchStatus:
         pass
 
     async def listing_update_status(
             self,
             batch_id: str
-    ) -> Batch:
+    ) -> BatchStatus:
         pass
 
     async def listing_update_items(

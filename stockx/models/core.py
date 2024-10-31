@@ -129,6 +129,7 @@ class Operation(StockXBaseModel):
     operation_initiated_via: str = ''
     created_at: datetime | None = None
     updated_at: datetime | None = None
+    # TODO: changes, operation_url?
 
 
 @dataclass(frozen=True, slots=True)
@@ -153,5 +154,5 @@ class ListingDetail(Listing):
 
 
 @dataclass(frozen=True, slots=True)
-class Batch(StockXBaseModel):
+class BatchStatus(StockXBaseModel):
     pass

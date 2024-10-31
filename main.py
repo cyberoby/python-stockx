@@ -8,8 +8,6 @@ from stockx.api import (
 )
 from stockx.api.client import StockXAPIClient
 
-import json
-
 from datetime import date, datetime
 
 
@@ -42,7 +40,6 @@ async def main() -> None:
         print(order)
         print('\n--------------------------------\n')
         await asyncio.sleep(1)
-
 
     await client.close()
 
