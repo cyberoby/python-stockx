@@ -3,8 +3,8 @@ from typing import AsyncIterator
 
 from stockx.api.base import StockXAPIBase
 from stockx.models.core import (
+    ListingDetail, 
     Listing, 
-    ListingPartial, 
     Operation,
 )
 
@@ -14,9 +14,9 @@ class Listings(StockXAPIBase):
     async def get_listing(
             self, 
             listing_id: str
-    ) -> Listing:
+    ) -> ListingDetail:
         response = await self.client.get(f'/selling/listings/{listing_id}')
-        return Listing.from_json(response.data)
+        return ListingDetail.from_json(response.data)
 
     async def get_all_listings(
             self,
@@ -28,7 +28,7 @@ class Listings(StockXAPIBase):
             inventory_types: list[str] = None,
             limit: int = None,
             page_size: int = 10
-    ) -> AsyncIterator[ListingPartial]:
+    ) -> AsyncIterator[Listing]:
         params = {
             'productIds': ','.join(product_ids) if product_ids else None,
             'variantIds': ','.join(variant_ids) if variant_ids else None,
@@ -44,7 +44,7 @@ class Listings(StockXAPIBase):
             limit=limit,
             page_size=page_size
         ):
-            yield ListingPartial.from_json(listing)
+            yield Listing.from_json(listing)
 
     async def create_listing(
             self,

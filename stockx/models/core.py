@@ -53,10 +53,10 @@ class MarketData(StockXBaseModel):
     product_id: str
     variant_id: str
     currency_code: str
-    lowest_ask_amount: float = 0
-    highest_bid_amount: float = 0
-    sell_faster_amount: float = 0
-    earn_more_amount: float = 0
+    lowest_ask_amount: float | None = None
+    highest_bid_amount: float | None = None
+    sell_faster_amount: float | None = None
+    earn_more_amount: float | None = None
     
 
 @dataclass(frozen=True, slots=True)
@@ -85,7 +85,7 @@ class Adjustments(StockXBaseModel):
 @dataclass(frozen=True, slots=True)
 class Payout(StockXBaseModel):
     total_payout: float
-    sale_price: float = 0
+    sale_price: float | None = None
     total_adjustments: float = 0
     currency_code: str = ''
     adjustments: list[Adjustments] = field(default_factory=list)
@@ -100,7 +100,6 @@ class Order(StockXBaseModel):
     currency_code: str
     product: ProductShort
     variant: VariantShort | None = None
-    shipment: Shipment | None = None
     authentication_details: AuthenticationDetails | None = None
     payout: Payout | None = None
     created_at: datetime | None = None
@@ -108,18 +107,8 @@ class Order(StockXBaseModel):
 
 
 @dataclass(frozen=True, slots=True)
-class OrderPartial(StockXBaseModel):
-    order_number: str
-    listing_id: str
-    amount: float
-    status: str
-    currency_code: str
-    product: ProductShort | None = None
-    variant: VariantShort | None = None
-    authentication_details: AuthenticationDetails = None
-    payout: Payout | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
+class OrderDetail(Order):
+    shipment: Shipment | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -139,7 +128,7 @@ class Operation(StockXBaseModel):
     operation_initiated_via: str = ''
     created_at: datetime | None = None
     updated_at: datetime | None = None
-        
+
 
 @dataclass(frozen=True, slots=True)
 class Listing(StockXBaseModel):
@@ -152,25 +141,14 @@ class Listing(StockXBaseModel):
     inventory_type: str = ''
     order: OrderShort | None = None
     authentication_details: AuthenticationDetails | None = None
-    payout: Payout | None = None
-    last_operation: Operation | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
-class ListingPartial(StockXBaseModel):
-    listing_id: str
-    status: str
-    amount: float
-    currency_code: str
-    product: ProductShort
-    variant: VariantShort | None = None
-    inventory_type: str = ''
-    order: OrderShort | None = None
-    authentication_details: AuthenticationDetails | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
+class ListingDetail(Listing):
+    payout: Payout | None = None
+    last_operation: Operation | None = None
 
 
 @dataclass(frozen=True, slots=True)

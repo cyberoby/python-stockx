@@ -46,7 +46,7 @@ def _camel_to_snake(json: dict[str, Any]) -> dict[str, Any]:
 
 
 def _convert(value, type_hint):
-    if not value:
+    if value is None:
         return None
     
     if type_hint is datetime:
