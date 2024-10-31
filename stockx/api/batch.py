@@ -25,14 +25,21 @@ class Batch(StockXAPIBase):
             self,
             batch_id: str,
     ) -> BatchStatus:
-        pass
+        response = await self.client.get(f'/batch/create-listing/{batch_id}')
+        return BatchStatus.from_json(response.data)
     
     async def get_create_listings_items(
             self,
             batch_id: str,
             status: str | None = None
     ) -> list[BatchItemCreate]:
-        pass
+        params = {'status': status}
+        response = await self.client.get(
+            f'/batch/create-listing/{batch_id}/items',
+            params=params,
+        )
+        items = response.data.get('items', [])
+        return [BatchItemCreate.from_json(item) for item in items]
 
     async def delete_listings(
             self,
@@ -46,14 +53,21 @@ class Batch(StockXAPIBase):
             self,
             batch_id: str
     ) -> BatchStatus:
-        pass
+        response = await self.client.get(f'/batch/delete-listing/{batch_id}')
+        return BatchStatus.from_json(response.data)
 
     async def listing_deletion_items(
             self,
             batch_id: str,
             status: str | None = None
     ) -> list[BatchItemDelete]:
-        pass
+        params = {'status': status}
+        response = await self.client.get(
+            f'/batch/delete-listing/{batch_id}/items',
+            params=params,
+        )
+        items = response.data.get('items', [])
+        return [BatchItemDelete.from_json(item) for item in items]
 
     async def update_listings(
             self,
@@ -67,11 +81,18 @@ class Batch(StockXAPIBase):
             self,
             batch_id: str
     ) -> BatchStatus:
-        pass
+        response = await self.client.get(f'/batch/update-listing/{batch_id}')
+        return BatchStatus.from_json(response.data)
 
     async def get_update_listings_items(
             self,
             batch_id: str,
             status: str | None = None
     ) -> list[BatchItemUpdate]:
-        pass
+        params = {'status': status}
+        response = await self.client.get(
+            f'/batch/update-listing/{batch_id}/items',
+            params=params,
+        )
+        items = response.data.get('items', [])
+        return [BatchItemUpdate.from_json(item) for item in items]
