@@ -2,7 +2,8 @@ from datetime import datetime
 from typing import AsyncIterator
 
 from stockx.api.base import StockXAPIBase
-from stockx.models.core import OrderDetail, Order
+from stockx.format import iso_date
+from stockx.models import OrderDetail, Order
 
 
 class Orders(StockXAPIBase):
@@ -25,8 +26,8 @@ class Orders(StockXAPIBase):
             page_size: int = 10
     ) -> AsyncIterator[Order]:
         params = {
-            'fromDate': from_date.strftime('%Y-%m-%d') if from_date else None,
-            'toDate': to_date.strftime('%Y-%m-%d') if to_date else None,
+            'fromDate': iso_date(from_date),
+            'toDate': iso_date(to_date),
             'orderStatus': order_status,
             'productId': product_id,
             'variantId': variant_id

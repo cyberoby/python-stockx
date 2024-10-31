@@ -21,6 +21,8 @@ async def main() -> None:
     # product = await catalog.get_product('da36823e-0d43-4ca4-a334-ce485c582948')
     # print(product)
 
+    batch = Batch(client)
+
     print('------------LISTINGS--------------\n')
     async for listing in listings.get_all_listings(
         limit=3,

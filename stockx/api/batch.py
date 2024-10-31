@@ -1,33 +1,48 @@
+from collections.abc import Iterable
+
 from stockx.api.base import StockXAPIBase
-from stockx.models.core import BatchStatus
+from stockx.models import (
+    BatchStatus,
+    BatchItemCreate,
+    BatchItemDelete,
+    BatchItemUpdate,
+    BatchInputCreate,
+    BatchInputUpdate,
+)
 
 
 class Batch(StockXAPIBase):
 
-    async def listings_creation(
+    async def create_listings(
             self,
+            items: Iterable[BatchInputCreate],
     ) -> BatchStatus:
-        pass
+        data = {'items': [item.to_json() for item in items]}
+        response = await self.client.post('/batch/create-listing', data=data)
+        return BatchStatus.from_json(response.data)
 
-    async def listings_creation_status(
+    async def get_create_listings_status(
             self,
-            batch_id: str
+            batch_id: str,
     ) -> BatchStatus:
         pass
     
-    async def listings_creation_items(
+    async def get_create_listings_items(
             self,
             batch_id: str,
-            listing_status: str = None
-    ) -> list:
+            status: str | None = None
+    ) -> list[BatchItemCreate]:
         pass
 
-    async def listings_deletion(
+    async def delete_listings(
             self,
+            listing_ids = Iterable[str],
     ) -> BatchStatus:
-        pass
+        data = {'items': [{'listingId': id} for id in listing_ids]}
+        response = await self.client.post('/batch/delete-listing', data=data)
+        return BatchStatus.from_json(response.data)
 
-    async def listings_deletion_status(
+    async def get_delete_listings_status(
             self,
             batch_id: str
     ) -> BatchStatus:
@@ -36,24 +51,27 @@ class Batch(StockXAPIBase):
     async def listing_deletion_items(
             self,
             batch_id: str,
-            status: str = None
-    ) -> list:
+            status: str | None = None
+    ) -> list[BatchItemDelete]:
         pass
 
-    async def listing_update(
+    async def update_listings(
             self,
+            items: Iterable[BatchInputUpdate],
     ) -> BatchStatus:
-        pass
+        data = {'items': [item.to_json() for item in items]}
+        response = await self.client.post('/batch/update-listing', data=data)
+        return BatchStatus.from_json(response.data)
 
-    async def listing_update_status(
+    async def get_update_listings_status(
             self,
             batch_id: str
     ) -> BatchStatus:
         pass
 
-    async def listing_update_items(
+    async def get_update_listings_items(
             self,
             batch_id: str,
-            listing_status: str = None
-    ) -> list:
+            status: str | None = None
+    ) -> list[BatchItemUpdate]:
         pass

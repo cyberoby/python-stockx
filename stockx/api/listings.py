@@ -2,7 +2,12 @@ from datetime import datetime
 from typing import AsyncIterator
 
 from stockx.api.base import StockXAPIBase
-from stockx.models.core import (
+from stockx.format import (
+    comma_separated,
+    iso,
+    iso_date,
+)
+from stockx.models import (
     ListingDetail, 
     Listing, 
     Operation,
@@ -32,8 +37,8 @@ class Listings(StockXAPIBase):
         params = {
             'productIds': comma_separated(product_ids),
             'variantIds': comma_separated(variant_ids),
-            'fromDate': from_date.strftime('%Y-%m-%d') if from_date else None,
-            'toDate': to_date.strftime('%Y-%m-%d') if to_date else None,
+            'fromDate': iso_date(from_date),
+            'toDate': iso_date(to_date),
             'listingStatuses': comma_separated(listing_statuses),
             'inventoryTypes': comma_separated(inventory_types),
         }
@@ -138,12 +143,3 @@ class Listings(StockXAPIBase):
         ):
             yield Operation.from_json(operation)
 
-
-def iso(datetime: datetime | None) -> str | None:
-    if not datetime:
-        return None
-    return f'{datetime.isoformat(timespec='seconds')}Z'
-
-
-def comma_separated(values: list[str] | None) -> str | None:
-    return ','.join(values) if values else None
