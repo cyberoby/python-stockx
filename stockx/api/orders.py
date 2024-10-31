@@ -25,8 +25,8 @@ class Orders(StockXAPIBase):
             page_size: int = 10
     ) -> AsyncIterator[Order]:
         params = {
-            'fromDate': str(datetime.date(from_date)) if from_date else None,
-            'toDate': str(datetime.date(to_date)) if to_date else None,
+            'fromDate': from_date.strftime('%Y-%m-%d') if from_date else None,
+            'toDate': to_date.strftime('%Y-%m-%d') if to_date else None,
             'orderStatus': order_status,
             'productId': product_id,
             'variantId': variant_id

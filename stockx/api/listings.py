@@ -30,12 +30,12 @@ class Listings(StockXAPIBase):
             page_size: int = 10
     ) -> AsyncIterator[Listing]:
         params = {
-            'productIds': ','.join(product_ids) if product_ids else None,
-            'variantIds': ','.join(variant_ids) if variant_ids else None,
-            'fromDate': str(datetime.date(from_date)) if from_date else None,
-            'toDate': str(datetime.date(to_date)) if to_date else None,
-            'listingStatuses': ','.join(listing_statuses) if listing_statuses else None,
-            'inventoryTypes': ','.join(inventory_types) if inventory_types else None
+            'productIds': comma_separated(product_ids),
+            'variantIds': comma_separated(variant_ids),
+            'fromDate': from_date.strftime('%Y-%m-%d') if from_date else None,
+            'toDate': to_date.strftime('%Y-%m-%d') if to_date else None,
+            'listingStatuses': comma_separated(listing_statuses),
+            'inventoryTypes': comma_separated(inventory_types),
         }
         async for listing in self._page(
             endpoint='/selling/listings',
@@ -58,8 +58,8 @@ class Listings(StockXAPIBase):
             'amount': f'{amount:.0f}',
             'variantId': variant_id,
             'currencyCode': currency_code,
-            'expiresAt': expires_at,
-            'active': active
+            'expiresAt': iso(expires_at),
+            'active': active,
         }
         response = await self.client.post(f'/selling/listings', data=data)
         return Operation.from_json(response.data)
@@ -74,7 +74,7 @@ class Listings(StockXAPIBase):
         data = {
             'amount': f'{amount:.0f}',
             'currencyCode': currency_code,
-            'expiresAt': expires_at
+            'expiresAt': iso(expires_at),
         }
         response = await self.client.put(
             f'/selling/listings/{listing_id}/activate', data=data
@@ -100,7 +100,7 @@ class Listings(StockXAPIBase):
         data = {
             'amount': f'{amount:.0f}',
             'currencyCode': currency_code,
-            'expiresAt': expires_at
+            'expiresAt': iso(expires_at),
         }
         response = await self.client.patch(
             f'/selling/listings/{listing_id}', data=data
@@ -138,3 +138,12 @@ class Listings(StockXAPIBase):
         ):
             yield Operation.from_json(operation)
 
+
+def iso(datetime: datetime | None) -> str | None:
+    if not datetime:
+        return None
+    return f'{datetime.isoformat(timespec='seconds')}Z'
+
+
+def comma_separated(values: list[str] | None) -> str | None:
+    return ','.join(values) if values else None

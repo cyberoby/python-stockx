@@ -44,10 +44,22 @@ class Catalog(StockXAPIBase):
     ) -> MarketData:
         params = {'currencyCode': currency_code}    
         response = await self.client.get(
-            f'/catalog/products/{product_id}/variants/{variant_id}/market-data', 
+            f'/catalog/products/{product_id}/variants/{variant_id}/market-data',
             params=params
         )
-        return MarketData.from_json(response)
+        return MarketData.from_json(response.data)
+    
+    async def get_product_market_data(
+            self, 
+            product_id: str, 
+            currency_code: str
+    ) -> list[MarketData]:
+        params = {'currencyCode': currency_code}    
+        response = await self.client.get(
+            f'/catalog/products/{product_id}/market-data', 
+            params=params
+        )
+        return [MarketData.from_json(item) for item in response.data]
     
     async def search_catalog(
             self, 

@@ -57,6 +57,7 @@ class MarketData(StockXBaseModel):
     highest_bid_amount: float | None = None
     sell_faster_amount: float | None = None
     earn_more_amount: float | None = None
+    flex_lowest_ask_amount: float | None = None
     
 
 @dataclass(frozen=True, slots=True)

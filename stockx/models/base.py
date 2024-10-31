@@ -33,7 +33,7 @@ class StockXBaseModel:
             key: _convert(val, type_hint=annotations[key])
             for key, val in matching_kwargs.items()
         }
-
+        
         return cls(**kwargs)
 
 
@@ -53,7 +53,7 @@ def _convert(value, type_hint):
         return datetime.fromisoformat(value)
     
     elif get_origin(type_hint) is list:
-        nested_type_hint, _ = get_args(type_hint)
+        nested_type_hint = get_args(type_hint)[0]
         return [_convert(v, nested_type_hint) for v in value]
     
     elif get_origin(type_hint) is UnionType:
