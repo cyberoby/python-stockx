@@ -141,7 +141,7 @@ class Listing(StockXBaseModel):
     amount: float
     currency_code: str
     product: ProductShort
-    variant: VariantShort | None = None
+    variant: VariantShort | None = None # TODO: probably required
     inventory_type: str = ''
     order: OrderShort | None = None
     authentication_details: AuthenticationDetails | None = None
@@ -183,20 +183,20 @@ class BatchItemBase(StockXBaseModel):
 
 @dataclass(frozen=True, slots=True)
 class BatchItemCreate(BatchItemBase):
-    listing_input: BatchInputCreate
+    listing_input: BatchInputCreate | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class BatchItemDelete(BatchItemBase):
-    listing_input: BatchInputDelete
+    listing_input: BatchInputDelete | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class BatchItemUpdate(BatchItemBase):
-    listing_input: BatchInputUpdate
+    listing_input: BatchInputUpdate | None = None
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class BatchInputCreate(StockXBaseModel):
     variant_id: str
     amount: int
@@ -216,7 +216,7 @@ class BatchInputCreate(StockXBaseModel):
         }
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class BatchInputUpdate(StockXBaseModel):
     listing_id: str
     active: bool | None = None
