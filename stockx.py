@@ -1,9 +1,13 @@
-from collections.abc import Iterable
-from dataclasses import dataclass
+from __future__ import annotations
+
+from collections.abc import Iterable, Iterator
+from collections import Counter
+from dataclasses import dataclass, field
 from itertools import groupby, batched
-from functools import reduce
+from functools import reduce, singledispatch
 from operator import attrgetter
-from typing import Generator, TypeVar
+from typing import TypeVar
+import asyncio
 
 from stockx.api.client import StockXAPIClient
 from stockx.api import (
@@ -13,6 +17,7 @@ from stockx.api import (
     Orders
 )
 from stockx.models import (
+    BatchCreateResult,
     BatchInputCreate,
     Product,
     Variant,
@@ -54,7 +59,7 @@ class ItemMarketData:
 @dataclass
 class InventoryItem:
     variant_id: str
-    product_id: str
+    product_id: str # might not be needed
     price: float
     quantity: int # computed
     skus: tuple[str, ...] | None = None
@@ -63,13 +68,63 @@ class InventoryItem:
     market_data: ItemMarketData | None = None
 
 
+@dataclass(slots=True)
+class ErrorDetail:
+    message: str
+    occurrences: int
+
+    @classmethod
+    def from_counter(cls, errors: Counter) -> Iterator[ErrorDetail]:
+        for message, occurrences in errors.items():
+            yield cls(message, occurrences)
+
+
+@dataclass(slots=True)
+class CreatedItem:
+    variant_id: str
+    price: float
+    listings_ids: list[str] = field(default_factory=list)
+    errors_detail: list[ErrorDetail] = field(default_factory=list)
+
+    @property
+    def quantity(self) -> int:
+        return len(self.listings_ids)
+
+    @property
+    def errors(self) -> int:
+        return sum(error.occurrences for error in self.errors_detail)
+    
+    @classmethod
+    def from_batch_results(
+            cls, 
+            results: Iterable[BatchCreateResult]
+    ) -> Iterator[CreatedItem]:
+        
+        # group by variant_id, price, and error
+        def key(result: BatchCreateResult) -> tuple[str, float, str]:
+            return (
+                result.listing_input.variant_id, 
+                result.listing_input.amount,
+                bool(result.error)
+            )
+        
+        for (variant_id, price, failed), results_group in groupby(results, key=key):
+            if failed:
+                errors = Counter(res.error for res in results_group)
+                errors_detail = list(ErrorDetail.from_counter(errors))
+            else:
+                listing_ids = [res.result.listing_id for res in results_group]
+            
+            yield cls(variant_id, price, listing_ids, errors_detail)
+
+
 def group_and_sum(
         iterable: Iterable[T], 
         /, 
         *, 
         group_keys: Iterable[str], 
         sum_attr: str
-) -> Generator[T, None, None]:
+) -> Iterator[T]:
     
     def reduce_func(accumulated, item):
         item_attr = getattr(item, sum_attr)
@@ -82,18 +137,37 @@ def group_and_sum(
         yield reduce(reduce_func, group)
 
 
-async def create_listings(items: Iterable[InventoryItem]) -> None:
+async def create_listings(items: Iterable[InventoryItem]):
     grouped_items = group_and_sum(
         items, 
         group_keys=('variant_id', 'price'), 
         sum_attr='quantity',
     )
-    for b in batched(grouped_items, 500):
-        await batch.create_listings(
-            BatchInputCreate(item.variant_id, item.price, item.quantity) 
-            for item 
-            in b
+
+    batch_ids = [] # batch ids to poll
+
+    # perform batch api calls (max 500 items per call)
+    for item_batch in batched(grouped_items, 500):
+        batch_status = await batch.create_listings(
+            BatchInputCreate.from_inventory_items(item_batch)
         )
+        batch_ids.append(batch_status.batch_id)
+
+    await batch_completed(batch_ids)
+
+
+async def batch_completed(batch_ids: Iterable[str], max_wait_time: int):
+    for batch_id in batch_ids:
+        sleep, waited = 1, 0
+        while waited <= max_wait_time:
+            await asyncio.sleep(sleep)
+
+            status = await batch.get_create_listings_status(batch_id)
+            if status.item_statuses.queued == 0:
+                break
+            
+            waited += sleep
+            sleep = min(sleep * 2, max_wait_time - waited)
 
 
 items = [
@@ -106,6 +180,9 @@ items = [
 
 
 grouped_items = group_and_sum(items, group_keys=('variant_id', 'price'), sum_attr='quantity')
-
+ 
 for g in grouped_items:
     print(g)
+
+
+

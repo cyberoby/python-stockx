@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -168,13 +169,13 @@ class BatchStatus(StockXBaseModel):
 
 @dataclass(frozen=True, slots=True)
 class BatchItemStatuses(StockXBaseModel):
-    queued: int = 0
-    failed: int = 0
-    succeeded: int = 0 # TODO is it succeded or what?
+    queued: int | None = None
+    failed: int | None = None
+    succeeded: int | None = None # TODO is it succeded or what?
 
 
 @dataclass(frozen=True, slots=True)
-class BatchItemBase(StockXBaseModel):
+class BatchResultBase(StockXBaseModel):
     item_id: str
     status: str
     result: BatchItemResult | None = None
@@ -182,28 +183,44 @@ class BatchItemBase(StockXBaseModel):
 
 
 @dataclass(frozen=True, slots=True)
-class BatchItemCreate(BatchItemBase):
+class BatchCreateResult(BatchResultBase):
     listing_input: BatchInputCreate | None = None
 
 
 @dataclass(frozen=True, slots=True)
-class BatchItemDelete(BatchItemBase):
+class BatchDeleteResult(BatchResultBase):
     listing_input: BatchInputDelete | None = None
 
 
 @dataclass(frozen=True, slots=True)
-class BatchItemUpdate(BatchItemBase):
+class BatchUpdateResult(BatchResultBase):
     listing_input: BatchInputUpdate | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class BatchInputCreate(StockXBaseModel):
     variant_id: str
-    amount: int
-    quantity: int
+    amount: float
+    quantity: int | None = None
     active: bool | None = None
     currency_code: str = ''
     expires_at: datetime | None = None
+
+    @classmethod
+    def from_inventory_items(
+            cls, 
+            items, 
+            active: bool | None = None,
+            expires_at: datetime | None = None,
+    ) -> Iterator[BatchInputCreate]:
+        for item in items:
+            yield cls(
+                variant_id=item.variant_id, 
+                amount=item.price, 
+                quantity=item.quantity,
+                active=active,
+                expires_at=expires_at,
+            )
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -222,7 +239,7 @@ class BatchInputUpdate(StockXBaseModel):
     active: bool | None = None
     currency_code: str = ''
     expires_at: datetime | None = None
-    amount: int | None = None
+    amount: float | None = None
 
     def to_json(self) -> dict[str, Any]:
         return {

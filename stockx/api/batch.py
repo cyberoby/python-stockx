@@ -3,9 +3,9 @@ from collections.abc import Iterable
 from stockx.api.base import StockXAPIBase
 from stockx.models import (
     BatchStatus,
-    BatchItemCreate,
-    BatchItemDelete,
-    BatchItemUpdate,
+    BatchCreateResult,
+    BatchDeleteResult,
+    BatchUpdateResult,
     BatchInputCreate,
     BatchInputUpdate,
 )
@@ -32,14 +32,14 @@ class Batch(StockXAPIBase):
             self,
             batch_id: str,
             status: str | None = None
-    ) -> list[BatchItemCreate]:
+    ) -> list[BatchCreateResult]:
         params = {'status': status}
         response = await self.client.get(
             f'/batch/create-listing/{batch_id}/items',
             params=params,
         )
         items = response.data.get('items', [])
-        return [BatchItemCreate.from_json(item) for item in items]
+        return [BatchCreateResult.from_json(item) for item in items]
 
     async def delete_listings(
             self,
@@ -60,14 +60,14 @@ class Batch(StockXAPIBase):
             self,
             batch_id: str,
             status: str | None = None
-    ) -> list[BatchItemDelete]:
+    ) -> list[BatchDeleteResult]:
         params = {'status': status}
         response = await self.client.get(
             f'/batch/delete-listing/{batch_id}/items',
             params=params,
         )
         items = response.data.get('items', [])
-        return [BatchItemDelete.from_json(item) for item in items]
+        return [BatchDeleteResult.from_json(item) for item in items]
 
     async def update_listings(
             self,
@@ -88,11 +88,11 @@ class Batch(StockXAPIBase):
             self,
             batch_id: str,
             status: str | None = None
-    ) -> list[BatchItemUpdate]:
+    ) -> list[BatchUpdateResult]:
         params = {'status': status}
         response = await self.client.get(
             f'/batch/update-listing/{batch_id}/items',
             params=params,
         )
         items = response.data.get('items', [])
-        return [BatchItemUpdate.from_json(item) for item in items]
+        return [BatchUpdateResult.from_json(item) for item in items]
