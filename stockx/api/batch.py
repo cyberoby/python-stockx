@@ -31,6 +31,7 @@ class Batch(StockXAPIBase):
     async def get_create_listings_items(
             self,
             batch_id: str,
+            *,
             status: str | None = None
     ) -> list[BatchCreateResult]:
         params = {'status': status}
@@ -56,9 +57,10 @@ class Batch(StockXAPIBase):
         response = await self.client.get(f'/batch/delete-listing/{batch_id}')
         return BatchStatus.from_json(response.data)
 
-    async def listing_deletion_items(
+    async def get_delete_listings_items(
             self,
             batch_id: str,
+            *,
             status: str | None = None
     ) -> list[BatchDeleteResult]:
         params = {'status': status}
@@ -87,6 +89,7 @@ class Batch(StockXAPIBase):
     async def get_update_listings_items(
             self,
             batch_id: str,
+            *,
             status: str | None = None
     ) -> list[BatchUpdateResult]:
         params = {'status': status}

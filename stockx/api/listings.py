@@ -1,5 +1,5 @@
+from collections.abc import AsyncIterator, Iterable
 from datetime import datetime
-from typing import AsyncIterator
 
 from stockx.api.base import StockXAPIBase
 from stockx.format import (
@@ -25,12 +25,12 @@ class Listings(StockXAPIBase):
 
     async def get_all_listings(
             self,
-            product_ids: list[str] = None,
-            variant_ids: list[str] = None,
+            product_ids: Iterable[str] = None,
+            variant_ids: Iterable[str] = None,
             from_date: datetime = None,
             to_date: datetime = None,
-            listing_statuses: list[str] = None,
-            inventory_types: list[str] = None,
+            listing_statuses: Iterable[str] = None,
+            inventory_types: Iterable[str] = None,
             limit: int = None,
             page_size: int = 10
     ) -> AsyncIterator[Listing]:
