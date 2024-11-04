@@ -149,6 +149,18 @@ class Listing(StockXBaseModel):
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
+    @property
+    def variant_id(self):
+        return self.variant.variant_id
+
+    @property
+    def size(self):
+        return self.variant.variant_value
+    
+    @property
+    def sku(self):
+        return self.product.style_id
+
 
 @dataclass(frozen=True, slots=True)
 class ListingDetail(Listing):

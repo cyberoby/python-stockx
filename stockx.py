@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator, Mapping
-from collections import Counter
+from collections.abc import Iterable, Iterator, AsyncIterator
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from itertools import groupby, batched, chain
 from functools import reduce, singledispatch
@@ -22,6 +22,7 @@ from stockx.models import (
     BatchInputCreate,
     Product,
     Variant,
+    Listing,
 )
 
 T = TypeVar('T')
@@ -185,43 +186,144 @@ async def create_listings(
         )
     
     return CreatedItem.from_batch_results(results)
+    
+ANY = None
 
 class ListedItems:
 
-    async def all(self):
-        async for listing in listings.get_all_listings(
-            listing_statuses=['ACTIVE'], 
-            limit=5, 
-            page_size=100
+    def __init__(self):
+        self._filters = defaultdict(set)
+        self._sku_sizes = defaultdict(set)
+
+    def _listings(self) -> AsyncIterator[Listing]:
+        
+        # filter by variant_id if no other filters are applied
+        # otherwise retrieve all
+        variant_ids = None
+        if not(self._sku_sizes) and all(
+            not(filters)
+            for field, filters in self._filters.items() 
+            if field != 'variant_ids'
         ):
-            yield listing
+            variant_ids = self._filters['variant_ids']  
 
-    async def filter(
+        return listings.get_all_listings(
+            variant_ids=variant_ids,
+            listing_statuses=['ACTIVE'], 
+            # limit=limit, 
+            page_size=100
+        )
+    
+    def _filtered(
             self, 
-            variant_ids: Iterable[str] | None = None,
-            skus: Iterable[str] | None = None,
-            sku_sizes: Mapping[str, Iterable[str]] | None = None
-    ): 
-        variant_ids = list(variant_ids)
-
-        for sku in skus:
-            product = await search_product_by_sku(sku)
-            if not product:
-                continue # raise exception?
-            variants = await catalog.get_all_product_variants(product.product_id)
-            variant_ids.extend(variant.variant_id for variant in variants)
-
-        for sku, sizes in sku_sizes.items():
-            if sku in skus:
-                continue
-            product = await search_product_by_sku(sku)
-            if not product:
-                continue # raise exception?
-            variants = await catalog.get_all_product_variants(product.product_id)
-            variant_ids.extend(
-                variant.variant_id for variant in variants
-                if variant.variant_value in sizes
+            listings: AsyncIterator[Listing],
+            /,
+    ) -> AsyncIterator[Listing]:
+        variant_ids = self._filters['variant_ids']
+        skus = self._filters['skus']
+        sizes = self._filters['sizes']
+        
+        def sku_size_check(listing: Listing) -> bool:
+            return (
+                (listing.size in sizes or not sizes)
+                and (listing.sku in skus or not skus)
+                or  (listing.size in self._sku_sizes[listing.sku])
             )
+        
+        def check(listing: Listing) -> bool:
+            return (listing.variant_id in variant_ids or not variant_ids)
+        
+        return (
+            listing async for listing in listings
+            if check(listing) and sku_size_check(listing)
+        )
+    
+    async def all(self):
+        pass
+
+    def filter(
+            self,
+            *,
+            variant_ids: Iterable[str] = ANY,
+            skus: Iterable[str] = ANY,
+            sku: str = ANY,
+            sizes: Iterable[str] = ANY,
+    ) -> ListedItems:
+        skus = [sku] if sku else skus
+
+        def apply_filter(key, values):
+            if not values:
+                return
+            if _filter := self._filters[key]: 
+                _filter.intersection_update(values)
+            else:
+                _filter.update(values)
+
+        apply_filter('variant_ids', variant_ids)
+        apply_filter('skus', skus)
+        apply_filter('sizes', sizes)
+
+        if sizes:
+            self._sku_sizes = {
+                sku: sizelist.intersection(sizes) for sku, sizelist
+                in self._sku_sizes.items() if sku in skus
+            }
+        else:
+            self._sku_sizes = {
+                sku: sizelist for sku, sizelist 
+                in self._sku_sizes.items() if sku in skus
+            }
+
+        return self
+
+    def include(
+            self,
+            *,
+            variant_ids: Iterable[str] = ANY,
+            skus: Iterable[str] = ANY,
+            sku: str = ANY,
+            sizes: Iterable[str] = ANY,
+    ) -> ListedItems:
+        
+        def add_to(key, values):
+            if values:
+                self._filters[key].update(values)
+
+        add_to('variant_ids', variant_ids)
+        add_to('skus', skus)
+        
+        if bool(sku) ^ bool(sizes):
+            add_to('skus' if sku else 'sizes', [sku] or sizes)
+
+        elif sku and sizes:
+            self._sku_sizes[sku].update(sizes)
+
+        return self
+
+            
+        # variant_ids = list(set(variant_ids))
+        # skus = list(set(skus))
+# 
+        # for sku in skus:
+        #     product = await search_product_by_sku(sku)
+        #     if not product:
+        #         continue # raise exception?
+        #     variants = await catalog.get_all_product_variants(product.product_id)
+        #     variant_ids.extend(variant.variant_id for variant in variants)
+# 
+        # for sku, sizes in sku_sizes.items():
+        #     if sku in skus:
+        #         skus.remove(sku)
+# 
+        #     product = await search_product_by_sku(sku)
+        #     if not product:
+        #         continue # raise exception?
+        #     variants = await catalog.get_all_product_variants(product.product_id)
+        #     variant_ids.extend(
+        #         variant.variant_id for variant in variants
+        #         if variant.variant_value in sizes
+        #     )
+
 
 
 
@@ -240,8 +342,10 @@ async def main():
 
     await client.initialize()
 
-    async for item in get_listed_items().all():
+    async for item in get_listed_items()._fetch_all():
         print(item)
+
+    async for item in get_listed_items().filter(sku='23123', sizes='10 11 12 13'.split(), use_or=True).all()
 
     await client.close()
     # grouped_items = group_and_sum(items, group_keys=('variant_id', 'price'), sum_attr='quantity')
