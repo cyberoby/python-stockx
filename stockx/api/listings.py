@@ -32,7 +32,8 @@ class Listings(StockXAPIBase):
             listing_statuses: Iterable[str] = None,
             inventory_types: Iterable[str] = None,
             limit: int = None,
-            page_size: int = 10
+            page_size: int = 10,
+            reverse: bool = False,
     ) -> AsyncIterator[Listing]:
         params = {
             'productIds': comma_separated(product_ids),
@@ -47,7 +48,8 @@ class Listings(StockXAPIBase):
             results_key='listings',
             params=params,
             limit=limit,
-            page_size=page_size
+            page_size=page_size,
+            reverse=reverse,
         ):
             yield Listing.from_json(listing)
 

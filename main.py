@@ -17,11 +17,11 @@ async def main():
 
     async for listing in listings.get_all_listings(
         listing_statuses=['ACTIVE'],
-        limit=50,
-        page_size=100
+        limit=10,
+        page_size=12,
+        reverse=True,
     ):
-        pprint.pprint(listing.created_at.isoformat(timespec='seconds'))
-        pprint.pprint(listing.updated_at.isoformat(timespec='seconds'))
+        print(listing.created_at.isoformat(timespec='seconds'))
         print('-----------')
 
     await client.close()

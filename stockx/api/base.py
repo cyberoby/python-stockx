@@ -1,3 +1,4 @@
+from math import ceil
 from typing import AsyncIterator
 
 from stockx.api.client import StockXAPIClient
@@ -14,27 +15,43 @@ class StockXAPIBase:
             results_key: str,
             params: dict = None, 
             limit: int = None, 
-            page_size: int = 10
+            page_size: int = 10,
+            reverse: bool = False,
     ) -> AsyncIterator[dict]:
-        params = self._set_params(params, page_size)
-        page_number = 1
+        params = params if params else {}
+        params['pageSize'] = page_size
+
+        if reverse:
+            response = await self.client.get(endpoint, params=params)
+            page_number = ceil(response.data.get('count', 0) / page_size) or 1
+        else:
+            page_number = 1
+
         count = 0
 
-        while self._check(count, limit):
+        while check(count, limit):
             params['pageNumber'] = page_number
             response = await self.client.get(endpoint, params=params)
-            has_next_page = bool(response.data.get('hasNextPage', False))
+
+            if reverse:
+                has_next_page = page_number > 1
+            else:
+                has_next_page = bool(response.data.get('hasNextPage', False))
+
             results = response.data.get(results_key, [])
+            if reverse:
+                results = reversed(results)
 
             for item in results:
                 yield item
                 count += 1
-                if not self._check(count, limit):
+                if not check(count, limit):
                     break
 
             if not has_next_page: 
                 break
-            page_number += 1
+
+            page_number += 1 if not reverse else -1
 
     async def _page_cursor(
             self, 
@@ -44,10 +61,11 @@ class StockXAPIBase:
             limit: int = None, 
             page_size: int = 10
     ) -> AsyncIterator[dict]:
-        params = self._set_params(params, page_size)
+        params = params if params else {}
+        params['pageSize'] = page_size
         count = 0
 
-        while self._check(count, limit):
+        while check(count, limit):
             response = await self.client.get(endpoint, params=params)
             next_cursor =  str(response.data.get('nextCursor'))
             results = response.data.get(results_key, [])
@@ -55,22 +73,16 @@ class StockXAPIBase:
             for item in results:
                 yield item
                 count += 1
-                if not self._check(count, limit):
+                if not check(count, limit):
                     break
             
             if not next_cursor:
                 break
             params['cursor'] = next_cursor
 
-    @staticmethod
-    def _check(count: int, limit: int) -> bool:
-        return count < limit if limit else True
-    
-    @staticmethod
-    def _set_params(params: dict, page_size: int) -> dict:
-        params = params if params else {}
-        params['pageSize'] = page_size
-        return params
+
+def check(count: int, limit: int) -> bool:
+    return count < limit if limit else True
 
 
 
