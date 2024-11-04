@@ -19,7 +19,7 @@ async def main():
         listing_statuses=['ACTIVE'],
         limit=10,
         page_size=12,
-        reverse=True,
+        oldest_first=True,
     ):
         print(listing.created_at.isoformat(timespec='seconds'))
         print('-----------')
