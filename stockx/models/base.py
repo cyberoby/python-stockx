@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from datetime import datetime
 from inspect import get_annotations
 from types import UnionType
@@ -35,6 +35,13 @@ class StockXBaseModel:
         }
         
         return cls(**kwargs)
+    
+    # def __str__(self) -> str:
+        #string_args = (
+        #    f'    {field.name}={str(getattr(self, field.name))}' 
+        #    for field in fields(self)
+        #)
+        #return f'{self.__class__.__name__}(\n{'\n'.join(string_args)}\n)'
 
 
 def _camel_to_snake(json: dict[str, Any]) -> dict[str, Any]:
