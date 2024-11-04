@@ -196,7 +196,33 @@ class ListedItems:
         self._sku_sizes = defaultdict(set)
     
     async def all(self):
-        pass
+        async for listing in self._listings():
+            yield listing
+
+    async def first(self):
+        async for listing in self._listings():
+            return listing
+        return None
+    
+    async def limit(self, n: int):
+        i = 0
+        async for listing in self._listings():
+            yield listing
+            i += 1
+            if i > n:
+                break
+    
+    async def offset(self, n: int):
+        i = 0
+        async for listing in self._listings():
+            i += 1
+            if i > n:
+                yield listing
+
+    async def exists(self) -> bool:
+        async for _ in self._listings():
+            return True
+        return False
 
     def include(
             self,
@@ -222,7 +248,7 @@ class ListedItems:
 
         return self
 
-    def filter(
+    def filter_by(
             self,
             *,
             variant_ids: Iterable[str] = ANY,
@@ -262,18 +288,22 @@ class ListedItems:
         # filter by variant_id if no other filters are applied
         # otherwise retrieve all
         variant_ids = None
+        filtered = self._filtered
         if not(self._sku_sizes) and all(
             not(filters)
             for field, filters in self._filters.items() 
             if field != 'variant_ids'
         ):
             variant_ids = self._filters['variant_ids']  
+            filtered = lambda x: x
 
-        return listings.get_all_listings(
-            variant_ids=variant_ids,
-            listing_statuses=['ACTIVE'], 
-            # limit=limit, 
-            page_size=100
+        return filtered(
+            listings.get_all_listings(
+                variant_ids=variant_ids,
+                listing_statuses=['ACTIVE'], 
+                # limit=limit, 
+                page_size=100,
+            )
         )
     
     def _filtered(
@@ -319,7 +349,7 @@ async def main():
     async for item in get_listed_items()._fetch_all():
         print(item)
 
-    async for item in get_listed_items().filter(sku='23123', sizes='10 11 12 13'.split(), use_or=True).all()
+    async for item in get_listed_items().filter_by(sku='23123', sizes='10 11 12 13'.split(), use_or=True).all()
 
     await client.close()
     # grouped_items = group_and_sum(items, group_keys=('variant_id', 'price'), sum_attr='quantity')
