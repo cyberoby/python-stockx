@@ -143,17 +143,57 @@ class ItemMarketData:
     flex_lowest_ask: float
 
     
-@dataclass
 class InventoryItem:
-    variant_id: str
-    product_id: str # might not be needed
-    price: float
-    quantity: int # computed
-    skus: tuple[str, ...] | None = None
-    size: str | None = None
-    payout: float | None = None # computed
-    market_data: ItemMarketData | None = None
+    
+    __slots__ = (
+        'variant_id', 
+        'price', 
+        '__quantity'
+        '__skus', 
+        '__size',
+    )
 
+    def __init__(
+            self,
+            *,
+            variant_id: str,
+            price: float,
+            quantity: int,
+    ) -> None:
+        self.variant_id = variant_id
+        self.price = price
+        self.__quantity = quantity
+        self.__skus = ''
+        self.__size = ''
+
+    def __repr__(self) -> str:
+        return (
+            f'{self.__class__.__name__}'
+            + f'({self.variant_id=}, {self.price=}, {self.quantity=})'
+        ).replace('self.', '')
+
+    # skus: tuple[str, ...] | None = None
+    # size: str | None = None
+    # payout: float | None = None # computed
+    # market_data: ItemMarketData | None = None
+ 
+    # _product_id: str = field(init=False, repr=False)
+    
+    @property
+    def quantity(self) -> int:
+        return self.__quantity
+
+    @quantity.setter
+    def quantity(self, value: int) -> None:
+        if int(value) < 0:
+            raise ValueError("Quantity can't be negative.")
+        self.__quantity = int(value)
+
+    @property
+    def skus(self) -> tuple[str, ...]:
+        if not self.__skus:
+            raise AttributeError('')
+        return self.__skus
 
 async def create_listings(
         items: Iterable[InventoryItem]
@@ -336,26 +376,20 @@ def get_listed_items():
 
 
 async def main():
+    items = [
+        InventoryItem(variant_id='id', price=100, quantity=1),
+        InventoryItem(variant_id='id', price=100, quantity=3),
+        InventoryItem(variant_id='id2', price=120, quantity=10),
+        InventoryItem(variant_id='id2', price=120, quantity=2),
+    ]
 
-    # items = [
-    #     InventoryItem(variant_id='id', product_id='pid', price=100, quantity=1),
-    #     InventoryItem(variant_id='id', product_id='pid', price=100, quantity=3),
-    #     InventoryItem(variant_id='id2', product_id='pid', price=120, quantity=10),
-    #     InventoryItem(variant_id='id2', product_id='pid', price=120, quantity=2),
-    # ]
+    # await client.initialize()
+    # await client.close()
 
-    await client.initialize()
-
-    async for item in get_listed_items()._fetch_all():
-        print(item)
-
-    async for item in get_listed_items().filter_by(sku='23123', sizes='10 11 12 13'.split(), use_or=True).all()
-
-    await client.close()
-    # grouped_items = group_and_sum(items, group_keys=('variant_id', 'price'), sum_attr='quantity')
-    # 
-    # for g in grouped_items:
-    #     print(g)
+    grouped_items = group_and_sum(items, group_keys=('variant_id', 'price'), sum_attr='quantity')
+    
+    for g in grouped_items:
+        print(g)
 
 
 if __name__ == '__main__':
