@@ -246,10 +246,12 @@ class InventoryItem:
         listings: AsyncIterable[Listing]
     ) -> list[InventoryItem]:
         items: dict[str, dict[float, InventoryItem]] = {}
+
         async for listing in listings:
             amounts_dict = items.setdefault(listing.variant_id, {})
+            
             if listing.amount in amounts_dict:
-                items[listing.variant_id][listing.amount].quantity += 1
+                amounts_dict[listing.amount].quantity += 1
             else:
                 item = InventoryItem(
                     variant_id=listing.variant_id,
@@ -259,9 +261,13 @@ class InventoryItem:
                 item._product_id = listing.product.id
                 item._sku = listing.sku
                 item._size = listing.size
-                items[listing.variant_id, listing.amount] = item
+                amounts_dict[listing.amount] = item
 
-        return []
+        return [
+            inventory_item 
+            for listing_price in items.values() 
+            for inventory_item in listing_price.values()
+        ]
             
 
     def __repr__(self) -> str:
