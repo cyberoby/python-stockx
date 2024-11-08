@@ -85,7 +85,7 @@ class StockXAPIClient:
                         message=response.reason, 
                         data=data
                     )
-                raise Exception(data['errorMessage']) # TODO: should include response object in the exception?
+                raise Exception(f'{data=} {response.reason=} {response.status=}') # TODO: should include response object in the exception?
         except aiohttp.ClientError as e:
             raise StockXAPIException('Request failed') from e # TODO custom exceptions
         

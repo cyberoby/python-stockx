@@ -28,12 +28,20 @@ class Product(StockXBaseModel):
     brand: str = ''
     product_attributes: ProductAttributes | None = None
 
+    @property
+    def id(self) -> str:
+        return self.product_id
+
 
 @dataclass(frozen=True, slots=True)
 class ProductShort(StockXBaseModel):
     product_id: str
     product_name: str = ''
     style_id: str = ''
+
+    @property
+    def id(self) -> str:
+        return self.product_id
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,6 +51,10 @@ class Variant(StockXBaseModel):
     variant_name: str = ''
     variant_value: str = ''
 
+    @property
+    def id(self) -> str:
+        return self.variant_id
+
 
 @dataclass(frozen=True, slots=True)
 class VariantShort(StockXBaseModel):
@@ -50,6 +62,10 @@ class VariantShort(StockXBaseModel):
     variant_name: str = ''
     variant_value: str = ''    
 
+    @property
+    def id(self) -> str:
+        return self.variant_id
+    
 
 @dataclass(frozen=True, slots=True)
 class MarketData(StockXBaseModel):
@@ -94,6 +110,24 @@ class Payout(StockXBaseModel):
     currency_code: str = ''
     adjustments: list[Adjustments] = field(default_factory=list)
 
+    @property
+    def transaction_fee(self) -> float:
+        for fee in self.adjustments:
+            if 'Transaction Fee' in fee.adjustment_type:
+                return fee.percentage
+
+    @property
+    def payment_fee(self) -> float:
+        for fee in self.adjustments:
+            if 'Payment Proc' in fee.adjustment_type:
+                return fee.percentage
+            
+    @property
+    def shipping_cost(self) -> float:
+        for fee in self.adjustments:
+            if 'Shipping' in fee.adjustment_type:
+                return fee.amount
+
 
 @dataclass(frozen=True, slots=True)
 class Order(StockXBaseModel):
@@ -124,14 +158,22 @@ class OrderShort(StockXBaseModel):
 
 @dataclass(frozen=True, slots=True)
 class Operation(StockXBaseModel):
-    listing_id: str
-    operation_id: str
-    operation_type: str
-    operation_status: str
+    listing_id: str = ''
+    operation_id: str = ''
+    operation_type: str = ''
+    operation_status: str = ''
     operation_initiated_by: str = ''
     operation_initiated_via: str = ''
     created_at: datetime | None = None
     updated_at: datetime | None = None
+
+    @property
+    def id(self) -> str:
+        return self.operation_id
+    
+    @property
+    def status(self) -> str:
+        return self.operation_status
     # TODO: changes, operation_url?
 
 
@@ -148,6 +190,10 @@ class Listing(StockXBaseModel):
     authentication_details: AuthenticationDetails | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
+
+    @property
+    def id(self) -> str:
+        return self.listing_id
 
     @property
     def variant_id(self):

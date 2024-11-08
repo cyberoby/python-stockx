@@ -27,14 +27,27 @@ class StockXBaseModel:
             key: val for key, val in _camel_to_snake(json).items() 
             if key in cls.__match_args__
         }
-
-        annotations = get_annotations(cls, eval_str=True)
+        
+        annotations = cls.annotations()
         kwargs = {
             key: _convert(val, type_hint=annotations[key])
             for key, val in matching_kwargs.items()
-        }
+        }      
         
         return cls(**kwargs)
+    
+    @classmethod
+    def annotations(cls) -> dict[str, Any]:
+        this_annotations = get_annotations(cls, eval_str=True)
+
+        super_annotations = {}
+        if len(cls.__mro__) > 1:
+            super_cls = cls.__mro__[1]
+            if hasattr(super_cls, 'annotations'):
+                super_annotations = super_cls.annotations()
+
+        return {**super_annotations, **this_annotations}
+
     
     # def __str__(self) -> str:
         #string_args = (

@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import AsyncIterator, Iterable
 from datetime import datetime
 
@@ -126,7 +127,7 @@ class Listings(StockXAPIBase):
             listing_id: str, 
             operation_id: str
     ) -> Operation:
-        response = await self.client.delete(
+        response = await self.client.get(
             f'/selling/listings/{listing_id}/operations/{operation_id}'
         )
         return Operation.from_json(response.data)
@@ -144,4 +145,20 @@ class Listings(StockXAPIBase):
             page_size=page_size
         ):
             yield Operation.from_json(operation)
+
+    async def operation_succeeded(
+            self,
+            operation: Operation
+    ) -> bool:
+        while operation.status == 'PENDING':
+            await asyncio.sleep(1) # TODO: move rate limiting to client
+            operation = await self.get_listing_operation(
+                listing_id=operation.listing_id,
+                operation_id=operation.id
+            )
+        
+        if operation.status == 'FAILED':
+            return False
+        
+        return True
 

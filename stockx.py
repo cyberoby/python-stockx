@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator, AsyncIterator
+from collections.abc import Iterable, Iterator, AsyncIterator, AsyncIterable
 from collections import Counter, defaultdict
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from itertools import groupby, batched, chain
 from functools import reduce, singledispatch
@@ -142,6 +143,73 @@ class ItemMarketData:
     earn_more: float
     flex_lowest_ask: float
 
+
+class Inventory:
+
+    def __init__(
+            self, 
+            stockx: StockXAPIClient, 
+            currency = 'EUR', 
+            minimum_transaction_fee = 5,
+            shipping_fee = 7,
+    ):
+        # later consolidate in one stockx object (with search product sku bla bla)
+        self.batch = Batch(stockx)          
+        self.catalog = Catalog(stockx)
+        self.listings = Listings(stockx)    
+        self.orders = Orders(stockx)
+
+        self.currency = currency
+
+        self.transaction_fee = 0 # load 
+        self.payment_fee = 0 # load
+        self.shipping_fee = shipping_fee
+        self.minimum_transaction_fee = minimum_transaction_fee
+
+    async def load(self) -> None:
+        await self.load_fees()
+
+    async def load_fees(self) -> None:
+        async for listing in self.listings.get_all_listings(
+            listing_statuses='ACTIVE',
+            limit=100,
+            page_size=100,
+        ):
+            detail = await self.listings.get_listing(listing.id)
+            if detail.payout:
+                self.transaction_fee = detail.payout.transaction_fee
+                self.payment_fee = detail.payout.payment_fee
+                return
+        
+        async with mock_listing(self) as detail:
+            if detail and detail.payout:
+                self.transaction_fee = detail.payout.transaction_fee
+                self.payment_fee = detail.payout.payment_fee
+                return
+        
+        raise RuntimeError('Unable to load fees.')
+
+            
+@asynccontextmanager
+async def mock_listing(inventory: Inventory, amount: float = 1000): # TODO: change inventory with stockx
+    product = await anext(inventory.catalog.search_catalog('adidas'))
+    variants = await inventory.catalog.get_all_product_variants(product.id)
+    create = await inventory.listings.create_listing(
+        amount=amount,
+        variant_id=variants[0].id,
+        currency_code=inventory.currency,
+    )
+    if not await inventory.listings.operation_succeeded(create):
+        pass # raise what?
+    
+    try:
+        listing = await inventory.listings.get_listing(create.listing_id)
+        yield listing
+    finally:
+        delete = await inventory.listings.delete_listing(create.listing_id)
+        if not await inventory.listings.operation_succeeded(delete):
+            pass # log
+
     
 class InventoryItem:
     
@@ -162,38 +230,71 @@ class InventoryItem:
     ) -> None:
         self.variant_id = variant_id
         self.price = price
-        self.__quantity = quantity
-        self.__skus = ''
-        self.__size = ''
+        self._quantity = quantity
+
+        self._sku = ''
+        self._size = ''
+        self.__payout = None # compute fees upon inventory load
+        self.__market_data = None # mmmhh fetch when how?
+
+        self._product_id = ''  # init?
+        self._inventory: Inventory = None
+
+    @classmethod
+    async def from_listings(
+        cls, 
+        listings: AsyncIterable[Listing]
+    ) -> list[InventoryItem]:
+        items: dict[str, dict[float, InventoryItem]] = {}
+        async for listing in listings:
+            amounts_dict = items.setdefault(listing.variant_id, {})
+            if listing.amount in amounts_dict:
+                items[listing.variant_id][listing.amount].quantity += 1
+            else:
+                item = InventoryItem(
+                    variant_id=listing.variant_id,
+                    price=listing.amount,
+                    quantity=1
+                )
+                item._product_id = listing.product.id
+                item._sku = listing.sku
+                item._size = listing.size
+                items[listing.variant_id, listing.amount] = item
+
+        return []
+            
 
     def __repr__(self) -> str:
         return (
             f'{self.__class__.__name__}'
             + f'({self.variant_id=}, {self.price=}, {self.quantity=})'
         ).replace('self.', '')
-
-    # skus: tuple[str, ...] | None = None
-    # size: str | None = None
-    # payout: float | None = None # computed
-    # market_data: ItemMarketData | None = None
- 
-    # _product_id: str = field(init=False, repr=False)
     
     @property
     def quantity(self) -> int:
-        return self.__quantity
+        return self._quantity
 
     @quantity.setter
     def quantity(self, value: int) -> None:
         if int(value) < 0:
             raise ValueError("Quantity can't be negative.")
-        self.__quantity = int(value)
+        self._quantity = int(value)
 
     @property
     def skus(self) -> tuple[str, ...]:
-        if not self.__skus:
-            raise AttributeError('')
-        return self.__skus
+        if not self._sku:
+            raise AttributeError('') # what?
+        return self._sku
+    
+    @property
+    def size(self) -> tuple[str, ...]:
+        if not self._size:
+            raise AttributeError('') # what?
+        return self._size
+    
+
+
+
 
 async def create_listings(
         items: Iterable[InventoryItem]
@@ -348,7 +449,7 @@ class ListedItems:
     
     def _filtered(
             self, 
-            listings: AsyncIterator[Listing],
+            listings: AsyncIterable[Listing],
             /,
     ) -> AsyncIterator[Listing]:
         variant_ids = self._filters['variant_ids']
