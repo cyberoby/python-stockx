@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator, AsyncIterator, AsyncIterable
+from collections.abc import Iterable, Iterator, AsyncIterator, AsyncIterable, Callable
 from collections import Counter, defaultdict
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
@@ -337,6 +337,7 @@ class ListedItems:
     def __init__(self):
         self._filters = defaultdict(set)
         self._sku_sizes = defaultdict(set)
+        self._conditions = list()
     
     async def all(self) -> list[InventoryItem]:
         return await InventoryItem.from_listings(self._listings())
@@ -347,14 +348,12 @@ class ListedItems:
         return None
     
     async def limit(self, n: int, /) -> list[InventoryItem]:
-        
+        items = await InventoryItem.from_listings(self._listings())
+        return items[:n]
     
-    async def offset(self, n: int):
-        i = 0
-        async for listing in self._listings():
-            i += 1
-            if i > n:
-                yield listing
+    async def offset(self, n: int, /):
+        items = await InventoryItem.from_listings(self._listings())
+        return items[n:]
 
     async def exists(self) -> bool:
         async for _ in self._listings():
@@ -418,6 +417,13 @@ class ListedItems:
                 in self._sku_sizes.items() if sku in skus
             }
 
+        return self
+
+    def filter(
+            self, 
+            condition: Callable[[InventoryItem], bool]
+    ) -> ListedItems:
+        self._conditions.append(condition)
         return self
     
     def _listings(self) -> AsyncIterator[Listing]:
