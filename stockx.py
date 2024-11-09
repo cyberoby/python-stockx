@@ -216,9 +216,9 @@ class InventoryItem:
     __slots__ = (
         'variant_id', 
         'price', 
-        '__quantity'
-        '__skus', 
-        '__size',
+        '_quantity'
+        '_sku', 
+        '_size',
     )
 
     def __init__(
@@ -242,8 +242,8 @@ class InventoryItem:
 
     @classmethod
     async def from_listings(
-        cls, 
-        listings: AsyncIterable[Listing]
+            cls, 
+            listings: AsyncIterable[Listing]
     ) -> list[InventoryItem]:
         items: dict[str, dict[float, InventoryItem]] = {}
 
@@ -265,10 +265,9 @@ class InventoryItem:
 
         return [
             inventory_item 
-            for listing_price in items.values() 
-            for inventory_item in listing_price.values()
+            for amount in items.values() 
+            for inventory_item in amount.values()
         ]
-            
 
     def __repr__(self) -> str:
         return (
@@ -298,9 +297,6 @@ class InventoryItem:
             raise AttributeError('') # what?
         return self._size
     
-
-
-
 
 async def create_listings(
         items: Iterable[InventoryItem]
@@ -342,22 +338,16 @@ class ListedItems:
         self._filters = defaultdict(set)
         self._sku_sizes = defaultdict(set)
     
-    async def all(self):
-        async for listing in self._listings():
-            yield listing
+    async def all(self) -> list[InventoryItem]:
+        return await InventoryItem.from_listings(self._listings())
 
-    async def first(self):
-        async for listing in self._listings():
-            return listing
+    async def first(self) -> InventoryItem | None:
+        for item in await InventoryItem.from_listings(self._listings()):
+            return item
         return None
     
-    async def limit(self, n: int):
-        i = 0
-        async for listing in self._listings():
-            yield listing
-            i += 1
-            if i > n:
-                break
+    async def limit(self, n: int, /) -> list[InventoryItem]:
+        
     
     async def offset(self, n: int):
         i = 0
@@ -388,7 +378,7 @@ class ListedItems:
         add_to('skus', skus)
         
         if bool(sku) ^ bool(sizes):
-            add_to('skus' if sku else 'sizes', [sku] or sizes)
+            add_to('skus' if sku else 'sizes', [sku] if sku else sizes)
 
         elif sku and sizes:
             self._sku_sizes[sku].update(sizes)
