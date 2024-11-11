@@ -6,8 +6,8 @@ from stockx.models import (
     BatchCreateResult,
     BatchDeleteResult,
     BatchUpdateResult,
-    BatchInputCreate,
-    BatchInputUpdate,
+    BatchCreateInput,
+    BatchUpdateInput,
 )
 
 
@@ -15,7 +15,7 @@ class Batch(StockXAPIBase):
 
     async def create_listings(
             self,
-            items: Iterable[BatchInputCreate],
+            items: Iterable[BatchCreateInput],
     ) -> BatchStatus:
         data = {'items': [item.to_json() for item in items]}
         response = await self.client.post('/batch/create-listing', data=data)
@@ -73,7 +73,7 @@ class Batch(StockXAPIBase):
 
     async def update_listings(
             self,
-            items: Iterable[BatchInputUpdate],
+            items: Iterable[BatchUpdateInput],
     ) -> BatchStatus:
         data = {'items': [item.to_json() for item in items]}
         response = await self.client.post('/batch/update-listing', data=data)

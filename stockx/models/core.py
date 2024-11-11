@@ -242,21 +242,21 @@ class BatchResultBase(StockXBaseModel):
 
 @dataclass(frozen=True, slots=True)
 class BatchCreateResult(BatchResultBase):
-    listing_input: BatchInputCreate | None = None
+    listing_input: BatchCreateInput | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class BatchDeleteResult(BatchResultBase):
-    listing_input: BatchInputDelete | None = None
+    listing_input: BatchDeleteInput | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class BatchUpdateResult(BatchResultBase):
-    listing_input: BatchInputUpdate | None = None
+    listing_input: BatchUpdateInput | None = None
 
 
 @dataclass(frozen=True, slots=True)
-class BatchInputCreate(StockXBaseModel):
+class BatchCreateInput(StockXBaseModel):
     variant_id: str
     amount: float
     quantity: int | None = None
@@ -271,7 +271,7 @@ class BatchInputCreate(StockXBaseModel):
             active: bool | None = None,
             expires_at: datetime | None = None,
             currency: str | None = None
-    ) -> Iterator[BatchInputCreate]:
+    ) -> Iterator[BatchCreateInput]:
         for item in items:
             yield cls(
                 variant_id=item.variant_id, 
@@ -294,7 +294,7 @@ class BatchInputCreate(StockXBaseModel):
 
 
 @dataclass(frozen=True, slots=True)
-class BatchInputUpdate(StockXBaseModel):
+class BatchUpdateInput(StockXBaseModel):
     listing_id: str
     active: bool | None = None
     currency_code: str = ''
@@ -308,7 +308,7 @@ class BatchInputUpdate(StockXBaseModel):
             active: bool | None = None,
             expires_at: datetime | None = None,
             currency: str | None = None,
-    ) -> Iterator[BatchInputUpdate]:
+    ) -> Iterator[BatchUpdateInput]:
         for item in items:
             for listing_id in item.listing_ids:
                 yield cls(
@@ -330,7 +330,7 @@ class BatchInputUpdate(StockXBaseModel):
     
     
 @dataclass(frozen=True, slots=True)
-class BatchInputDelete(StockXBaseModel):
+class BatchDeleteInput(StockXBaseModel):
     id: str # TODO: check if its id or listing_id in the response  
 
 

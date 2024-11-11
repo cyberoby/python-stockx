@@ -21,8 +21,8 @@ from stockx.models.core import (
     BatchCreateResult,
     BatchDeleteResult,
     BatchUpdateResult,
-    BatchInputCreate,
-    BatchInputDelete,
-    BatchInputUpdate,
+    BatchCreateInput,
+    BatchDeleteInput,
+    BatchUpdateInput,
     BatchItemResult,
 )
