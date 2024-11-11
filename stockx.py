@@ -51,7 +51,7 @@ async def search_product_by_url(stock_url: str) -> Product | None:
         return None
 
 
-async def batch_completed(batch_ids: Iterable[str], max_wait_time: int):
+async def batch_completed(batch_ids: Iterable[str], max_wait_time: int) -> None:
     for batch_id in batch_ids:
         sleep, waited = 1, 0
         while waited <= max_wait_time:
@@ -59,7 +59,7 @@ async def batch_completed(batch_ids: Iterable[str], max_wait_time: int):
 
             status = await batch.get_create_listings_status(batch_id)
             if status.item_statuses.queued == 0:
-                break
+                return
             
             waited += sleep
             sleep = min(sleep * 2, max_wait_time - waited)
@@ -148,16 +148,16 @@ class Inventory:
 
     def __init__(
             self, 
-            stockx: StockXAPIClient, 
+            client: StockXAPIClient, 
             currency = 'EUR', 
             minimum_transaction_fee = 5,
             shipping_fee = 7,
     ):
         # later consolidate in one stockx object (with search product sku bla bla)
-        self.batch = Batch(stockx)          
-        self.catalog = Catalog(stockx)
-        self.listings = Listings(stockx)    
-        self.orders = Orders(stockx)
+        self.batch = Batch(client)          
+        self.catalog = Catalog(client)
+        self.listings = Listings(client)    
+        self.orders = Orders(client)
 
         self.currency = currency
 
@@ -165,6 +165,15 @@ class Inventory:
         self.payment_fee = 0 # load
         self.shipping_fee = shipping_fee
         self.minimum_transaction_fee = minimum_transaction_fee
+
+        self._price_updates = set()
+        self._quantity_updates = set()
+
+    def register_price_change(self, item: InventoryItem) -> None:
+        self._price_updates.add(item)
+
+    def register_quantity_change(self, item: InventoryItem) -> None:
+        self._quantity_updates.add(item)
 
     async def load(self) -> None:
         await self.load_fees()
@@ -239,6 +248,7 @@ class InventoryItem:
 
         self._product_id = ''  # init?
         self._inventory: Inventory = None
+        self.listing_ids = []
 
     @classmethod
     async def from_listings(
@@ -252,12 +262,14 @@ class InventoryItem:
             
             if listing.amount in amounts_dict:
                 amounts_dict[listing.amount].quantity += 1
+                amounts_dict[listing.amount].listing_ids.append(listing.id)
             else:
                 item = InventoryItem(
                     variant_id=listing.variant_id,
                     price=listing.amount,
                     quantity=1
                 )
+                item.listing_ids.append(listing.id)
                 item._product_id = listing.product.id
                 item._sku = listing.sku
                 item._size = listing.size
@@ -284,6 +296,8 @@ class InventoryItem:
         if int(value) < 0:
             raise ValueError("Quantity can't be negative.")
         self._quantity = int(value)
+        if self._inventory:
+            self._inventory.register_quantity_change(self)
 
     @property
     def skus(self) -> tuple[str, ...]:
@@ -334,29 +348,33 @@ ANY = None
 
 class ListedItems:
 
-    def __init__(self):
+    __slots__ = ('_filters', '_sku_sizes', '_conditions')
+
+    def __init__(self) -> None:
         self._filters = defaultdict(set)
         self._sku_sizes = defaultdict(set)
         self._conditions = list()
     
     async def all(self) -> list[InventoryItem]:
-        return await InventoryItem.from_listings(self._listings())
+        return [
+            item for item
+            in await InventoryItem.from_listings(self._listings())
+            if all(condition(item) for condition in self._conditions)
+        ]
 
     async def first(self) -> InventoryItem | None:
-        for item in await InventoryItem.from_listings(self._listings()):
+        for item in await self.all():
             return item
         return None
     
     async def limit(self, n: int, /) -> list[InventoryItem]:
-        items = await InventoryItem.from_listings(self._listings())
-        return items[:n]
+        return (await self.all())[:n]
     
-    async def offset(self, n: int, /):
-        items = await InventoryItem.from_listings(self._listings())
-        return items[n:]
+    async def offset(self, n: int, /) -> list[InventoryItem]:
+        return (await self.all())[n:]
 
     async def exists(self) -> bool:
-        async for _ in self._listings():
+        for _ in await self.all():
             return True
         return False
 
@@ -474,7 +492,7 @@ class ListedItems:
         )
 
 
-def get_listed_items():
+def get_items():
     return ListedItems()
 
 
