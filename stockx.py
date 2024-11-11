@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from itertools import groupby, batched, chain
 from functools import reduce, singledispatch
 from operator import attrgetter
-from typing import TypeVar
+from typing import TypeVar, Any
 import asyncio
 
 from stockx.api.client import StockXAPIClient
@@ -166,8 +166,8 @@ class Inventory:
         self.shipping_fee = shipping_fee
         self.minimum_transaction_fee = minimum_transaction_fee
 
-        self._price_updates = set()
-        self._quantity_updates = set()
+        self._price_updates: set[InventoryItem] = set()
+        self._quantity_updates: set[InventoryItem] = set()
 
     def register_price_change(self, item: InventoryItem) -> None:
         self._price_updates.add(item)
@@ -197,6 +197,24 @@ class Inventory:
                 return
         
         raise RuntimeError('Unable to load fees.')
+    
+    async def update(self) -> None:
+        quantity_change = lambda item: item.quantity - len(item.listing_ids)
+        listings_to_delete = {
+            listing_id
+            for item in self._quantity_updates if quantity_change(item) < 0
+            for listing_id in item.listing_ids[:quantity_change(item)] 
+        }
+        listings_to_create = {
+            item: quantity_change(item) 
+            for item in self._quantity_updates if quantity_change(item) > 0
+        }
+        listings_to_update = {
+            listing_id
+            for item in self._price_updates
+            for listing_id in item.listing_ids
+        }.difference_update(listings_to_delete)
+        
 
             
 @asynccontextmanager
@@ -238,7 +256,7 @@ class InventoryItem:
             quantity: int,
     ) -> None:
         self.variant_id = variant_id
-        self.price = price
+        self._price = price
         self._quantity = quantity
 
         self._sku = ''
@@ -248,7 +266,7 @@ class InventoryItem:
 
         self._product_id = ''  # init?
         self._inventory: Inventory = None
-        self.listing_ids = []
+        self.listing_ids: list[str] = []
 
     @classmethod
     async def from_listings(
@@ -284,7 +302,7 @@ class InventoryItem:
     def __repr__(self) -> str:
         return (
             f'{self.__class__.__name__}'
-            + f'({self.variant_id=}, {self.price=}, {self.quantity=})'
+            + f'({self.variant_id=}, {self._price=}, {self.quantity=})'
         ).replace('self.', '')
     
     @property
@@ -293,11 +311,23 @@ class InventoryItem:
 
     @quantity.setter
     def quantity(self, value: int) -> None:
-        if int(value) < 0:
+        if value < 0:
             raise ValueError("Quantity can't be negative.")
-        self._quantity = int(value)
-        if self._inventory:
-            self._inventory.register_quantity_change(self)
+        if int(value) != self._quantity:
+            self._quantity = int(value)
+            if self._inventory:
+                self._inventory.register_quantity_change(self)
+
+    @property
+    def price(self) -> float:
+        return self._price
+    
+    @price.setter
+    def price(self, value: float) -> None:
+        if value != self._price:
+            self._price = value
+            if self._inventory:
+                self._inventory.register_price_change(self)
 
     @property
     def skus(self) -> tuple[str, ...]:
