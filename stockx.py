@@ -51,20 +51,39 @@ async def search_product_by_url(stock_url: str) -> Product | None:
         return None
 
 
-async def batch_completed(batch_ids: Iterable[str], max_wait_time: int) -> None:
-    for batch_id in batch_ids:
-        sleep, waited = 1, 0
-        while waited <= max_wait_time:
-            await asyncio.sleep(sleep)
+async def batch_completed(batch_ids, get_batch_status_coro, timeout):
+    completed_batch_ids = set()
+    pending_batch_ids = set(batch_ids)
 
-            status = await batch.get_create_listings_status(batch_id)
+    sleep, waited = 1, 0
+    while waited <= timeout:
+        await asyncio.sleep(sleep)
+
+        for batch_id in pending_batch_ids:
+            status = await get_batch_status_coro(batch_id)
             if status.item_statuses.queued == 0:
-                return
-            
-            waited += sleep
-            sleep = min(sleep * 2, max_wait_time - waited)
-        else:
-            raise BatchTimeOutError
+                completed_batch_ids.update(batch_id)
+
+        pending_batch_ids.difference_update(completed_batch_ids)
+        if len(pending_batch_ids) == 0:
+            return
+        
+        waited += sleep
+        sleep = min(sleep * 2, timeout - waited)
+    else:
+        raise BatchTimeOutError # TODO: add report on completed items??
+    
+
+def batch_create_completed(batch_ids: Iterable[str], timeout: int):
+    return batch_completed(batch_ids, batch.get_create_listings_status, timeout)
+
+
+def batch_delete_completed(batch_ids: Iterable[str], timeout: int):
+    return batch_completed(batch_ids, batch.get_delete_listings_status, timeout)
+
+
+def batch_update_completed(batch_ids: Iterable[str], timeout: int):
+    return batch_completed(batch_ids, batch.get_update_listings_status, timeout)
         
         
 def group_and_sum(
@@ -199,21 +218,21 @@ class Inventory:
         raise RuntimeError('Unable to load fees.')
     
     async def update(self) -> None:
-        quantity_change = lambda item: item.quantity - len(item.listing_ids)
-        listings_to_delete = {
-            listing_id
-            for item in self._quantity_updates if quantity_change(item) < 0
-            for listing_id in item.listing_ids[:quantity_change(item)] 
-        }
-        listings_to_create = {
-            item: quantity_change(item) 
-            for item in self._quantity_updates if quantity_change(item) > 0
-        }
-        listings_to_update = {
-            listing_id
-            for item in self._price_updates
-            for listing_id in item.listing_ids
-        }.difference_update(listings_to_delete)
+        listings_to_delete = set()
+        listings_to_create = set()
+
+        for item in self._quantity_updates:
+            quantity_change = item.quantity - len(item.listing_ids)
+
+            if quantity_change < 0:
+                listings_to_delete.update(item.listing_ids[quantity_change:])
+                item.listing_ids = item.listing_ids[:-quantity_change]
+
+            if quantity_change > 0:
+                listings_to_create.update(item)
+
+        listings_to_update = self._price_updates
+        
         
 
             
@@ -342,6 +361,28 @@ class InventoryItem:
         return self._size
     
 
+async def delete_listings(
+        listing_ids: Iterable[str]
+) -> list[str]:
+    
+    batch_ids = []
+    for listing_batch in batched(listing_ids, 500):
+        batch_status = await batch.delete_listings(listing_batch)
+        batch_ids.append(batch_status.batch_id)
+
+    try:
+        await batch_delete_completed(batch_ids, 60)
+    except BatchTimeOutError:
+        pass
+
+    return [
+        result.listing_input.id
+        for batch_id in batch_ids
+        for result
+        in await batch.get_delete_listings_items(batch_id, status='COMPLETED')
+    ]
+    
+
 async def create_listings(
         items: Iterable[InventoryItem]
 ) -> Iterator[CreatedItem]:
@@ -361,7 +402,7 @@ async def create_listings(
         batch_ids.append(batch_status.batch_id)
 
     try:
-        await batch_completed(batch_ids, 60)
+        await batch_create_completed(batch_ids, 60)
     except BatchTimeOutError:
         pass # TODO: partial report
     
@@ -373,6 +414,10 @@ async def create_listings(
         )
     
     return CreatedItem.from_batch_results(results)
+
+async def update_listings(
+        items: Iterable[InventoryItem]
+)
     
 ANY = None
 

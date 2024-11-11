@@ -2,7 +2,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from stockx.format import iso
 from stockx.models import StockXBaseModel
@@ -229,7 +229,7 @@ class BatchStatus(StockXBaseModel):
 class BatchItemStatuses(StockXBaseModel):
     queued: int | None = None
     failed: int | None = None
-    succeeded: int | None = None # TODO is it succeded or what?
+    succeeded: int | None = None # TODO is it succeeded or what?
 
 
 @dataclass(frozen=True, slots=True)
@@ -270,6 +270,7 @@ class BatchInputCreate(StockXBaseModel):
             items, 
             active: bool | None = None,
             expires_at: datetime | None = None,
+            currency: str | None = None
     ) -> Iterator[BatchInputCreate]:
         for item in items:
             yield cls(
@@ -278,6 +279,7 @@ class BatchInputCreate(StockXBaseModel):
                 quantity=item.quantity,
                 active=active,
                 expires_at=expires_at,
+                currency_code=currency
             )
 
     def to_json(self) -> dict[str, Any]:
@@ -298,6 +300,24 @@ class BatchInputUpdate(StockXBaseModel):
     currency_code: str = ''
     expires_at: datetime | None = None
     amount: float | None = None
+
+    @classmethod
+    def from_inventory_items( # TODO: move to a function outside of class?
+            cls, 
+            items,
+            active: bool | None = None,
+            expires_at: datetime | None = None,
+            currency: str | None = None,
+    ) -> Iterator[BatchInputUpdate]:
+        for item in items:
+            for listing_id in item.listing_ids:
+                yield cls(
+                    listing_id=listing_id,
+                    amount=item.price,
+                    active=active,
+                    expires_at=expires_at,
+                    currency_code=currency
+                )
 
     def to_json(self) -> dict[str, Any]:
         return {
