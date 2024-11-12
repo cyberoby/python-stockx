@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from itertools import groupby, batched, chain
 from functools import reduce, singledispatch
 from operator import attrgetter
-from typing import TypeVar
+from typing import TypeVar, TypeAlias
 import asyncio
 
 from stockx.api.client import StockXAPIClient
@@ -108,17 +108,40 @@ def group_and_sum(
     for _, group in groups:
         yield reduce(reduce_func, group)
 
+BatchResult: TypeAlias = BatchCreateResult | BatchDeleteResult | BatchUpdateResult
 
 @dataclass(slots=True, frozen=True)
 class ErrorDetail:
     message: str
     occurrences: int
+    listing_id: str | None = None
 
     @classmethod
-    def from_messages(cls, errors: Iterable[str]) -> Iterator[ErrorDetail]: # TODO: change to namedtuple?
+    def from_results(
+        cls, 
+        results: Iterable[BatchResult],
+        include_listing_id: bool = False
+    ) -> Iterator[ErrorDetail]:
+        if include_listing_id:
+            return (
+                cls(result.error, 1, result.listing_input.listing_id) 
+                for result in results if result.error
+            )  
+
+        errors = (result.error for result in results if result.error)
+        return (
+            cls(message, occurrences) 
+            for message, occurrences in Counter(errors).items()
+        )
+
+    def from_messages(
+            cls,
+            errors: Iterable[str]
+    ) -> Iterator[ErrorDetail]:
         for message, occurrences in Counter(errors).items():
             if message:
                 yield cls(message, occurrences)
+
 
 
 @dataclass
@@ -183,9 +206,14 @@ class Inventory:
         
         raise RuntimeError('Unable to load fees.')
     
-    async def update(self):
-        await update_quantity(self._quantity_updates)
-        await update_listings(self._price_updates)
+    async def update(self) -> Iterator[UpdateResult]:
+        quantity_results = await update_quantity(self._quantity_updates)
+        price_results = await update_listings(self._price_updates)
+
+        self._price_updates.clear()
+        self._quantity_updates.clear()
+
+        return UpdateResult.consolidate(quantity_results, price_results)
         
 
 async def update_quantity(items: Iterable[InventoryItem]) -> Iterator[UpdateResult]:
@@ -195,21 +223,39 @@ async def update_quantity(items: Iterable[InventoryItem]) -> Iterator[UpdateResu
     delete_ids = (item.listing_ids[item.quantity_to_sync:] for item in decrease)
     deleted_results = await delete_listings(chain.from_iterable(delete_ids))
 
-    created_results = await create_listings(increase, sync=True)
+    increased_results = await create_listings(increase, sync=True)
 
-    for item in decrease:
-        item.listing_ids = [
-            listing_id for listing_id in item.listing_ids 
-            if listing_id not in deleted_results.deleted
-        ]
+    # Convert to sets for faster lookup
+    deleted_set = set(deleted_results.deleted)
+    failed_set = set(deleted_results.failed)
+    error_map = {err.listing_id: err for err in deleted_results.errors_detail}
     
+    decreased_results = []
+    for item in decrease:
+        deleted =  {lid for lid in item.listing_ids if lid in deleted_set}
+        failed = tuple(lid for lid in item.listing_ids if lid in failed_set)
+        errors = tuple(error_map[lid] for lid in failed if lid in error_map)
+
+        # Update item's listing_ids by removing successfully deleted IDs
+        item.listing_ids = [l for l in item.listing_ids if l not in deleted]
+
+        decreased_results.append(
+            UpdateResult(
+                item, 
+                deleted=deleted, 
+                failed=failed, 
+                errors_detail=errors
+            )
+        )
+    
+    # Update listing_ids for items in increase based on created results
     for item in increase:
         item.listing_ids.extend(
             result.created for result 
-            in created_results if item == result.item
+            in increased_results if item == result.item
         )
 
-    return (result for result in chain(deleted_results, created_results))
+    return chain(decreased_results, increased_results)
     
             
 @asynccontextmanager
@@ -351,12 +397,47 @@ class UpdateResult:
     errors_detail: tuple[ErrorDetail, ...] = field(default_factory=tuple)
 
     @classmethod
-    def from_updated_quantity(
-        items: Iterable[InventoryItem],
-        created_listing_ids
+    def consolidate(
+            cls, 
+            *results: Iterable[UpdateResult]
     ) -> Iterator[UpdateResult]:
-        for item in items:
-            yield cls(item, created=
+        results_ = chain(*results)
+
+        # Group results by item
+        grouped_results = defaultdict(list)
+        for result in results_:
+            grouped_results[result.item].append(result)
+
+        for item, item_results in grouped_results.items():
+            # Sets for each lifecycle stage to ensure latest status
+            created_ids = set(chain.from_iterable(r.created for r in item_results))
+            updated_ids = set(chain.from_iterable(r.updated for r in item_results))
+            deleted_ids = set(chain.from_iterable(r.deleted for r in item_results))
+            failed_ids = set(chain.from_iterable(r.failed for r in item_results))
+
+            # Consolidate errors
+            all_errors = chain.from_iterable(r.errors_detail for r in item_results)
+            messages = (error.message for error in all_errors)
+            unique_errors_detail = tuple(ErrorDetail.from_messages(messages))
+
+            # Apply lifecycle rules:
+            # 1. Move 'created' -> 'updated' if also in updated
+            # 2. Move 'created' -> 'deleted' if also in deleted
+            # 3. Move 'updated' -> 'deleted' if in both
+            # 4. Remove from 'failed' if in created, updated, or deleted
+            created_ids -= updated_ids | deleted_ids
+            updated_ids -= deleted_ids
+            failed_ids -= (created_ids | updated_ids | deleted_ids)
+
+            yield cls(
+                item=item,
+                created=tuple(created_ids),
+                updated=tuple(updated_ids),
+                deleted=tuple(deleted_ids),
+                failed=tuple(failed_ids),
+                errors_detail=unique_errors_detail,
+            )
+            
 
     @classmethod
     def from_batch_update(
@@ -399,8 +480,7 @@ class UpdateResult:
                 continue
 
             created = tuple(result.listing_id for result in item_results)
-            errors = tuple(result.error for result in item_results)
-            errors_detail = tuple(ErrorDetail.from_messages(errors))
+            errors_detail = tuple(ErrorDetail.from_results(item_results))
             
             yield cls(item, created, errors_detail=errors_detail)
 
@@ -410,8 +490,8 @@ class UpdateResult:
             results: Iterable[BatchDeleteResult],
     ) -> UpdateResult:
         deleted = (result.listing_id for result in results if not result.error)
-        failed = (result.listing_id for result in results if result.error)
-        errors = (ErrorDetail.from_messages(result.error for result in results))
+        failed = (result.listing_input.id for result in results if result.error)
+        errors = (ErrorDetail.from_results(results, include_listing_id=True))
 
         return cls(
             deleted=tuple(deleted), 
