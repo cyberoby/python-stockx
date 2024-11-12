@@ -239,6 +239,12 @@ class BatchResultBase(StockXBaseModel):
     result: BatchItemResult | None = None
     error: str = ''
 
+    @property
+    def listing_id(self) -> str | None:
+        if self.result.listing_id:
+            return self.result.listing_id
+        return None
+
 
 @dataclass(frozen=True, slots=True)
 class BatchCreateResult(BatchResultBase):
