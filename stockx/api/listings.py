@@ -158,7 +158,7 @@ class Listings(StockXAPIBase):
             )
         
         if operation.status == 'FAILED':
-            return False
+            return False # TODO: raise error instead?
         
         return True
 

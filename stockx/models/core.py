@@ -248,17 +248,17 @@ class BatchResultBase(StockXBaseModel):
 
 @dataclass(frozen=True, slots=True)
 class BatchCreateResult(BatchResultBase):
-    listing_input: BatchCreateInput | None = None
+    listing_input: BatchCreateInput
 
 
 @dataclass(frozen=True, slots=True)
 class BatchDeleteResult(BatchResultBase):
-    listing_input: BatchDeleteInput | None = None
+    listing_input: BatchDeleteInput
 
 
 @dataclass(frozen=True, slots=True)
 class BatchUpdateResult(BatchResultBase):
-    listing_input: BatchUpdateInput | None = None
+    listing_input: BatchUpdateInput
 
 
 @dataclass(frozen=True, slots=True)
@@ -338,6 +338,10 @@ class BatchUpdateInput(StockXBaseModel):
 @dataclass(frozen=True, slots=True)
 class BatchDeleteInput(StockXBaseModel):
     id: str # TODO: check if its id or listing_id in the response  
+
+    @property
+    def listing_id(self) -> str:
+        return self.id
 
 
 @dataclass(frozen=True, slots=True)
