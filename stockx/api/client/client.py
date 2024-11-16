@@ -1,8 +1,8 @@
 import aiohttp
 import asyncio
 
-from stockx.exceptions import StockXAPIException
-from stockx.models.base import Response
+from ...exceptions import StockXAPIException
+from ...models import Response
 
 TOKEN = '***REMOVED***'
 GRANT_TYPE = 'refresh_token'
@@ -22,16 +22,23 @@ class StockXAPIClient:
     def __init__(
             self,
             hostname: str,
-            version: str
+            version: str,
+            x_api_key: str,
+            client_id: str,
+            client_secret: str, # TODO: maybe move last 3 attr to login()
     ) -> None:
         self.url = f'https://{hostname}/{version}'
+        self.x_api_key = x_api_key
+        self.client_id = client_id
+        self.client_secret = client_secret
         
         self._is_initialized: bool = False
         self._session: aiohttp.ClientSession = None
         self._refresh_task: asyncio.Task = None
 
-    async def initialize(self) -> None:
-        self._refresh_task = asyncio.create_task(self._refresh_session())
+    async def initialize(self, refresh_token: str) -> None:
+        refresh = self._refresh_session(refresh_token)
+        self._refresh_task = asyncio.create_task(refresh)
         await asyncio.sleep(2)
 
     async def close(self) -> None:
@@ -89,23 +96,23 @@ class StockXAPIClient:
         except aiohttp.ClientError as e:
             raise StockXAPIException('Request failed') from e # TODO custom exceptions
         
-    async def _refresh_session(self) -> None:
+    async def _refresh_session(self, refresh_token: str) -> None:
         while True:
             if self._session: 
                 await self._session.close() # TODO: don't close session, just change token
-            headers = await self._refresh_token()
+            headers = await self._login(refresh_token)
             self._session = aiohttp.ClientSession(headers=headers) 
             self._is_initialized = True
             await asyncio.sleep(REFRESH_TIME)
 
-    async def _refresh_token(self) -> dict:
+    async def _login(self, refresh_token: str) -> dict:
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         refresh_data = {
             'grant_type': GRANT_TYPE,
-            'client_id': CLIENT_ID,
-            'client_secret': CLIENT_SECRET,
+            'client_id': self.client_id,
+            'client_secret': self.client_secret,
             'audience': AUDIENCE,
-            'refresh_token': REFRESH_TOKEN
+            'refresh_token': refresh_token
         }
         async with aiohttp.ClientSession() as session:
             async with session.post(
@@ -115,7 +122,7 @@ class StockXAPIClient:
                 token = payload['access_token']
                 return {
                     'Authorization': f'Bearer {token}',
-                    'x-api-key': X_API_KEY
+                    'x-api-key': self.x_api_key
                 }
             
 

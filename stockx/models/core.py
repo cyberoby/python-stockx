@@ -1,11 +1,14 @@
 from __future__ import annotations
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, TYPE_CHECKING
 
-from stockx.format import iso
-from stockx.models import StockXBaseModel
+from .base import StockXBaseModel
+from ..format import iso
+
+if TYPE_CHECKING:
+    from ..ext.inventory import Item
 
 
 @dataclass(frozen=True, slots=True)
@@ -196,15 +199,11 @@ class Listing(StockXBaseModel):
         return self.listing_id
 
     @property
-    def variant_id(self):
-        return self.variant.variant_id
-
-    @property
-    def size(self):
+    def variant_value(self):
         return self.variant.variant_value
     
     @property
-    def sku(self):
+    def style_id(self):
         return self.product.style_id
 
 
@@ -273,16 +272,17 @@ class BatchCreateInput(StockXBaseModel):
     @classmethod
     def from_inventory_items(
             cls, 
-            items, 
+            items: Iterable[Item], 
             active: bool | None = None,
             expires_at: datetime | None = None,
-            currency: str | None = None
+            currency: str | None = None,
+            sync_quantity: bool = False
     ) -> Iterator[BatchCreateInput]:
         for item in items:
             yield cls(
                 variant_id=item.variant_id, 
                 amount=item.price, 
-                quantity=item.quantity,
+                quantity=item.quantity if not sync_quantity else item.quantity_to_sync(),
                 active=active,
                 expires_at=expires_at,
                 currency_code=currency
@@ -310,7 +310,7 @@ class BatchUpdateInput(StockXBaseModel):
     @classmethod
     def from_inventory_items( # TODO: move to a function outside of class?
             cls, 
-            items,
+            items: Iterable[Item],
             active: bool | None = None,
             expires_at: datetime | None = None,
             currency: str | None = None,

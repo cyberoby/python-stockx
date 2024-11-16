@@ -1,4 +1,5 @@
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
+from copy import deepcopy
 from functools import reduce
 from itertools import groupby
 from operator import attrgetter
@@ -12,13 +13,14 @@ def group_and_sum(
         iterable: Iterable[T], 
         /, 
         group_keys: Iterable[str], 
-        sum_attr: str
+        sum_attrs: Iterable[str],
 ) -> Iterator[T]:
     
     def reduce_func(accumulated, item):
-        item_attr = getattr(item, sum_attr)
-        accumulated_attr = getattr(accumulated, sum_attr)
-        setattr(item, sum_attr, accumulated_attr + item_attr)
+        for attr in sum_attrs:
+            item_attr = getattr(item, attr)
+            accumulated_attr = getattr(accumulated, attr)
+            setattr(item, attr, accumulated_attr + item_attr)
         return item
     
     iterable = sorted(iterable, key=attrgetter(*group_keys))

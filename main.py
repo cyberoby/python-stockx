@@ -2,7 +2,6 @@ from collections import defaultdict
 from stockx.api import Catalog, Batch, Listings, Orders
 from stockx.api.client import StockXAPIClient
 import asyncio
-import pprint
 from datetime import datetime
 
 async def main():

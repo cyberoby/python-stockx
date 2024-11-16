@@ -1,7 +1,7 @@
 from math import ceil
 from typing import AsyncIterator
 
-from stockx.api.client import StockXAPIClient
+from .client import StockXAPIClient
 
 # TODO: fix type hints
 class StockXAPIBase:

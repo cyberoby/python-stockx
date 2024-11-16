@@ -1,5 +1,5 @@
-from stockx.models.base import StockXBaseModel
-from stockx.models.core import (
+from .base import StockXBaseModel, Response
+from .core import (
     ProductAttributes,
     Product,
     ProductShort,

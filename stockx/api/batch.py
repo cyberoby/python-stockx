@@ -5,9 +5,9 @@ from collections.abc import (
     Iterable,
 )
 
-from stockx.api.base import StockXAPIBase
-from stockx.exceptions import BatchTimeOutError
-from stockx.models import (
+from .base import StockXAPIBase
+from ..exceptions import BatchTimeOutError
+from ..models import (
     BatchStatus,
     BatchCreateResult,
     BatchDeleteResult,

@@ -1,7 +1,7 @@
 from typing import AsyncIterator
 
-from stockx.api.base import StockXAPIBase
-from stockx.models import (
+from .base import StockXAPIBase
+from ..models import (
     Product, 
     Variant, 
     MarketData,

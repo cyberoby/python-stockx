@@ -10,15 +10,17 @@ from itertools import (
 )
 from typing import TypeAlias
 
-from stockx.exceptions import BatchTimeOutError
-from stockx.models import (
+from .item import Item
+from ...api import StockX, Batch
+from ...exceptions import BatchTimeOutError
+from ...models import (
     BatchCreateInput,
     BatchCreateResult,
     BatchUpdateInput,
     BatchUpdateResult,
     BatchDeleteResult,
 )
-from stockx.processing import group_and_sum
+from ...processing import group_and_sum
 
 
 BatchResult: TypeAlias = BatchCreateResult | BatchDeleteResult | BatchUpdateResult
@@ -56,7 +58,7 @@ class ErrorDetail:
 
 @dataclass(slots=True, frozen=True)
 class UpdateResult:
-    item: InventoryItem | None = None
+    item: Item | None = None
     created: tuple[str, ...] = field(default_factory=tuple)
     updated: tuple[str, ...] = field(default_factory=tuple)
     deleted: tuple[str, ...] = field(default_factory=tuple)
@@ -71,7 +73,7 @@ class UpdateResult:
         results_ = chain(*results)
 
         # Group results by item
-        grouped_results = defaultdict(list)
+        grouped_results: defaultdict[Item, list[UpdateResult]] = defaultdict(list)
         for result in results_:
             grouped_results[result.item].append(result)
 
@@ -108,7 +110,7 @@ class UpdateResult:
     @classmethod
     def from_batch_update(
             cls,
-            items: Iterable[InventoryItem],
+            items: Iterable[Item],
             results: Iterable[BatchUpdateResult],
     ) -> Iterator[UpdateResult]:
         error_map = {r.listing_input.listing_id: r.error for r in results}
@@ -129,7 +131,7 @@ class UpdateResult:
     @classmethod
     def from_batch_create(
             cls, 
-            items: Iterable[InventoryItem],
+            items: Iterable[Item],
             results: Iterable[BatchCreateResult],
     ) -> Iterator[UpdateResult]:
         item_map = {(item.variant_id, item.price): item for item in items}
@@ -166,14 +168,17 @@ class UpdateResult:
         )
 
 
-async def update_quantity(items: Iterable[InventoryItem]) -> Iterator[UpdateResult]:
-    decrease = {item for item in items if item.quantity_to_sync < 0}
-    increase = {item for item in items if item.quantity_to_sync > 0}
+async def update_quantity(
+        stockx: StockX, 
+        items: Iterable[Item],
+) -> Iterator[UpdateResult]:
+    decrease = {item for item in items if item.quantity_to_sync() < 0}
+    increase = {item for item in items if item.quantity_to_sync() > 0}
 
-    delete_ids = (item.listing_ids[item.quantity_to_sync:] for item in decrease)
-    deleted_results = await delete_listings(chain.from_iterable(delete_ids))
+    delete_ids = (item.listing_ids[item.quantity_to_sync():] for item in decrease)
+    deleted_results = await delete_listings(stockx, chain.from_iterable(delete_ids))
 
-    increased_results = await create_listings(increase, sync=True)
+    increased_results = await create_listings(stockx, increase, sync_quantity=True)
 
     # Convert to sets for faster lookup
     deleted_set = set(deleted_results.deleted)
@@ -209,17 +214,22 @@ async def update_quantity(items: Iterable[InventoryItem]) -> Iterator[UpdateResu
 
 
 async def create_listings(
-        items: Iterable[InventoryItem], 
-        sync: bool = False
+        stockx: StockX,
+        items: Iterable[Item], 
+        sync_quantity: bool = False
 ) -> Iterator[UpdateResult]:
 
-    sum_attr = 'quantity_to_sync' if sync else 'quantity'
-    grouped_items = group_and_sum(items, ('variant_id', 'price'), sum_attr)
+    sum_attrs = ('quantity', 'listing_ids') if sync_quantity else ('quantity',)
+    grouped_items = group_and_sum(items, ('variant_id', 'price'), sum_attrs)
+    
     batch_ids = []
 
     for item_batch in batched(grouped_items, 500):
-        inputs = BatchCreateInput.from_inventory_items(item_batch)
-        batch_status = await batch.create_listings(inputs)
+        inputs = BatchCreateInput.from_inventory_items(
+            items=item_batch, 
+            sync_quantity=sync_quantity
+        )
+        batch_status = await stockx.batch.create_listings(inputs)
         batch_ids.append(batch_status.batch_id)
 
     results = await _batch_results(batch_ids, create_listings, 60)
@@ -227,12 +237,15 @@ async def create_listings(
     return UpdateResult.from_batch_create(items, results)
 
 
-async def update_listings(items: Iterable[InventoryItem]) -> Iterator[UpdateResult]:
+async def update_listings(
+        stockx: StockX,
+        items: Iterable[Item]
+) -> Iterator[UpdateResult]:
     update_input = BatchUpdateInput.from_inventory_items(items) # add currency
     batch_ids = []
     
     for inputs in batched(update_input, 500):
-        batch_status = await batch.update_listings(inputs)
+        batch_status = await stockx.batch.update_listings(inputs)
         batch_ids.append(batch_status.batch_id)
 
     results = await _batch_results(batch_ids, update_listings, 60)
@@ -240,11 +253,14 @@ async def update_listings(items: Iterable[InventoryItem]) -> Iterator[UpdateResu
     return UpdateResult.from_batch_update(items, results)
 
 
-async def delete_listings(listing_ids: Iterable[str]) -> UpdateResult:
+async def delete_listings(
+        stockx: StockX,
+        listing_ids: Iterable[str]
+) -> UpdateResult:
     
     batch_ids = []
     for listing_batch in batched(listing_ids, 500):
-        batch_status = await batch.delete_listings(listing_batch)
+        batch_status = await stockx.batch.delete_listings(listing_batch)
         batch_ids.append(batch_status.batch_id)
 
     results = await _batch_results(batch_ids, delete_listings, 60)
@@ -252,17 +268,18 @@ async def delete_listings(listing_ids: Iterable[str]) -> UpdateResult:
     return UpdateResult.from_batch_delete(results)
 
 
-async def _batch_results(batch_ids, func, timeout):
+async def _batch_results(stockx, batch_ids, func, timeout):
+    b: Batch = stockx.batch
     action_map = {
-        create_listings: (batch.create_listings_completed, batch.create_listings_items),
-        update_listings: (batch.update_listings_completed, batch.update_listings_items),
-        delete_listings: (batch.delete_listings_completed, batch.delete_listings_items),
+        create_listings: (b.create_listings_completed, b.create_listings_items),
+        update_listings: (b.update_listings_completed, b.update_listings_items),
+        delete_listings: (b.delete_listings_completed, b.delete_listings_items),
     }
 
     batch_completed, get_items = action_map[func]
 
     try:
-        await batch_completed(batch_ids, 60)
+        await batch_completed(batch_ids, timeout)
     except BatchTimeOutError:
         pass
 
