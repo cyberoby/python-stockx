@@ -8,7 +8,7 @@ from .base import StockXBaseModel
 from ..format import iso
 
 if TYPE_CHECKING:
-    from ..ext.inventory import Item
+    from ..ext.inventory import ListedItem
 
 
 @dataclass(frozen=True, slots=True)
@@ -269,25 +269,6 @@ class BatchCreateInput(StockXBaseModel):
     currency_code: str = ''
     expires_at: datetime | None = None
 
-    @classmethod
-    def from_inventory_items(
-            cls, 
-            items: Iterable[Item], 
-            active: bool | None = None,
-            expires_at: datetime | None = None,
-            currency: str | None = None,
-            sync_quantity: bool = False
-    ) -> Iterator[BatchCreateInput]:
-        for item in items:
-            yield cls(
-                variant_id=item.variant_id, 
-                amount=item.price, 
-                quantity=item.quantity if not sync_quantity else item.quantity_to_sync(),
-                active=active,
-                expires_at=expires_at,
-                currency_code=currency
-            )
-
     def to_json(self) -> dict[str, Any]:
         return {
             'active': bool(self.active),
@@ -306,24 +287,6 @@ class BatchUpdateInput(StockXBaseModel):
     currency_code: str = ''
     expires_at: datetime | None = None
     amount: float | None = None
-
-    @classmethod
-    def from_inventory_items( # TODO: move to a function outside of class?
-            cls, 
-            items: Iterable[Item],
-            active: bool | None = None,
-            expires_at: datetime | None = None,
-            currency: str | None = None,
-    ) -> Iterator[BatchUpdateInput]:
-        for item in items:
-            for listing_id in item.listing_ids:
-                yield cls(
-                    listing_id=listing_id,
-                    amount=item.price,
-                    active=active,
-                    expires_at=expires_at,
-                    currency_code=currency
-                )
 
     def to_json(self) -> dict[str, Any]:
         return {

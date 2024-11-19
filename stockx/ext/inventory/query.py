@@ -3,33 +3,44 @@ from __future__ import annotations
 from collections.abc import Iterable, AsyncIterator, AsyncIterable, Callable
 from collections import defaultdict
 
-from .item import Item
+from .inventory import Inventory
+from .item import ListedItem
 from ...models import Listing
 
 
 ANY = None
 
 
-class ListedItems:
+class ItemsQuery:
 
-    __slots__ = '_conditions', '_filters', '_sku_sizes',
+    __slots__ = '_conditions', '_filters', '_limit', '_offset', '_sku_sizes'
 
-    def __init__(self) -> None:
+    def __init__(self, inventory: Inventory) -> None:
+        self.inventory = inventory  
         self._conditions = list()
         self._filters = defaultdict(set)
         self._sku_sizes = defaultdict(set)
+        self._limit = 0
+        self._offset = 0
     
-    async def get(
-            self, 
-            offset: int = 0,
-            limit: int | None = None, 
-    ) -> list[Item]:
-        items = await Item.from_listings(self._listings())
+    async def get(self) -> list[ListedItem]:
+        items = await ListedItem.from_inventory_listings(
+            inventory=self.inventory,
+            listings=self._listings(),
+        )
         return [
             item for item
-            in items[offset:limit - offset]
+            in items[self._offset:self._limit + self._offset]
             if all(condition(item) for condition in self._conditions)
         ]
+
+    def offset(self, n: int, /) -> ItemsQuery:
+        self._offset = n
+        return self
+
+    def limit(self, n: int, /) -> ItemsQuery:
+        self._limit = n
+        return self
 
     def include(
             self,
@@ -38,7 +49,7 @@ class ListedItems:
             skus: Iterable[str] = ANY,
             sku: str = ANY,
             sizes: Iterable[str] = ANY,
-    ) -> ListedItems:
+    ) -> ItemsQuery:
         
         def add_to(key, values):
             if values:
@@ -62,7 +73,7 @@ class ListedItems:
             skus: Iterable[str] = ANY,
             sku: str = ANY,
             sizes: Iterable[str] = ANY,
-    ) -> ListedItems:
+    ) -> ItemsQuery:
         skus = [sku] if sku else skus
 
         def apply_filter(key, values):
@@ -92,30 +103,29 @@ class ListedItems:
 
     def filter(
             self, 
-            condition: Callable[[Item], bool]
-    ) -> ListedItems:
+            condition: Callable[[ListedItem], bool]
+    ) -> ItemsQuery:
         self._conditions.append(condition)
         return self
     
     def _listings(self) -> AsyncIterator[Listing]:
-        
-        # filter by variant_id if no other filters are applied
-        # otherwise retrieve all
-        variant_ids = None
-        filtered = self._filtered
         if not(self._sku_sizes) and all(
             not(filters)
             for field, filters in self._filters.items() 
             if field != 'variant_ids'
         ):
+            # filter by variant_id if no other filters are applied
             variant_ids = self._filters['variant_ids']  
             filtered = lambda x: x
+        else:
+            # otherwise retrieve all
+            variant_ids = None
+            filtered = self._filtered
 
         return filtered(
-            listings.get_all_listings(
+            self.inventory.stockx.listings.get_all_listings(
                 variant_ids=variant_ids,
                 listing_statuses=['ACTIVE'], 
-                # limit=limit, 
                 page_size=100,
             )
         )
@@ -130,20 +140,22 @@ class ListedItems:
         sizes = self._filters['sizes']
         
         def sku_size_check(listing: Listing) -> bool:
-            return (
-                (listing.variant_value in sizes or not sizes)
-                and (listing.sku in skus or not skus)
-                or  (listing.variant_value in self._sku_sizes[listing.sku])
-            )
+            return listing.variant_value in self._sku_sizes[listing.style_id]
         
-        def check(listing: Listing) -> bool:
-            return (listing.variant_id in variant_ids or not variant_ids)
+        def variant_id_check(listing: Listing) -> bool:
+            return listing.variant.id in variant_ids or not variant_ids
+        
+        def style_id_check(listing: Listing) -> bool:
+            return not (set(listing.style_id.split('/')).isdisjoint(skus) and skus)
+        
+        def size_check(listing: Listing) -> bool:
+            return (listing.variant_value in sizes or not sizes)
         
         return (
-            listing async for listing in listings
-            if check(listing) and sku_size_check(listing)
+            listing async for listing in listings if
+            variant_id_check(listing) 
+            and style_id_check(listing)
+            and size_check(listing)
+            and sku_size_check(listing)
         )
-
-
-def get_items():
-    return ListedItems()
+    

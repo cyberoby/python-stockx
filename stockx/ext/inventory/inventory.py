@@ -1,11 +1,12 @@
 from collections.abc import Iterator
 
-from .item import Item
-from .update import (
+from .batch.operations import (
     UpdateResult,
     update_listings, 
     update_quantity,
 )
+from .item import ListedItem
+from .query import ItemsQuery
 from ..mock import mock_listing
 from ...api import StockX
 
@@ -38,14 +39,17 @@ class Inventory:
         self.transaction_fee = 0.09
         self.payment_fee = 0.03
 
-        self._price_updates: set[Item] = set()
-        self._quantity_updates: set[Item] = set()
+        self._price_updates: set[ListedItem] = set()
+        self._quantity_updates: set[ListedItem] = set()
 
-    def register_price_change(self, item: Item) -> None:
+    def register_price_change(self, item: ListedItem) -> None:
         self._price_updates.add(item)
 
-    def register_quantity_change(self, item: Item) -> None:
+    def register_quantity_change(self, item: ListedItem) -> None:
         self._quantity_updates.add(item)
+
+    def items(self) -> ItemsQuery:
+        return ItemsQuery(self)
 
     async def load(self) -> None:
         await self.load_fees()
