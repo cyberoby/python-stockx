@@ -4,17 +4,20 @@ import asyncio
 from ...exceptions import StockXAPIException
 from ...models import Response
 
-TOKEN = '***REMOVED***'
+from dotenv import load_dotenv
+
+
 GRANT_TYPE = 'refresh_token'
-CLIENT_ID = '***REMOVED***'
-CLIENT_SECRET = '***REMOVED***'
-X_API_KEY = '***REMOVED***'
-REFRESH_TOKEN = '***REMOVED***'
 REFRESH_URL = 'https://accounts.stockx.com/oauth/token'
 REFRESH_TIME = 3600
 AUDIENCE = 'gateway.stockx.com'
 HOSTNAME = 'api.stockx.com'
 VERSION = 'v2'
+
+CLIENT_ID = load_dotenv('CLIENT_ID')
+CLIENT_SECRET = load_dotenv('CLIENT_SECRET')
+X_API_KEY = load_dotenv('X_API_KEY')
+REFRESH_TOKEN = load_dotenv('REFRESH_TOKEN')
 
 
 class StockXAPIClient:
