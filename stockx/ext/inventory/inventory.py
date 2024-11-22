@@ -6,7 +6,7 @@ from .batch.operations import (
     update_quantity,
 )
 from .item import ListedItem
-from .query import ItemsQuery
+from .query import create_items_query, ItemsQuery
 from ..mock import mock_listing
 from ...api import StockX
 
@@ -49,7 +49,7 @@ class Inventory:
         self._quantity_updates.add(item)
 
     def items(self) -> ItemsQuery:
-        return ItemsQuery(self)
+        return create_items_query(self)
 
     async def load(self) -> None:
         await self.load_fees()
