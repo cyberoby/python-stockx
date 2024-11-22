@@ -1,11 +1,24 @@
 from .base import StockXBaseModel, Response
-from .core import (
+from .batch import (
+    BatchStatus,
+    BatchItemStatuses,
+    BatchCreateResult,
+    BatchDeleteResult,
+    BatchUpdateResult,
+    BatchCreateInput,
+    BatchDeleteInput,
+    BatchUpdateInput,
+    BatchItemResult,
+)
+from .products import (
     ProductAttributes,
     Product,
     ProductShort,
     Variant,
     VariantShort,
     MarketData,
+)
+from .sales import (
     Shipment,
     AuthenticationDetails,
     Adjustments,
@@ -16,13 +29,4 @@ from .core import (
     Operation,
     Listing,
     ListingDetail,
-    BatchStatus,
-    BatchItemStatuses,
-    BatchCreateResult,
-    BatchDeleteResult,
-    BatchUpdateResult,
-    BatchCreateInput,
-    BatchDeleteInput,
-    BatchUpdateInput,
-    BatchItemResult,
 )

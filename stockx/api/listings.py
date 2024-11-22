@@ -2,13 +2,13 @@ import asyncio
 from collections.abc import AsyncIterator, Iterable
 from datetime import datetime
 
-from stockx.api.base import StockXAPIBase
-from stockx.format import (
+from .base import StockXAPIBase
+from ..format import (
     comma_separated,
     iso,
     iso_date,
 )
-from stockx.models import (
+from ..models import (
     ListingDetail, 
     Listing, 
     Operation,

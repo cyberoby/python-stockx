@@ -1,9 +1,9 @@
 from datetime import datetime
 from typing import AsyncIterator
 
-from stockx.api.base import StockXAPIBase
-from stockx.format import iso_date
-from stockx.models import OrderDetail, Order
+from .base import StockXAPIBase
+from ..format import iso_date
+from ..models import OrderDetail, Order
 
 
 class Orders(StockXAPIBase):

@@ -6,9 +6,6 @@ from .orders import Orders
 from ..exceptions import StockXAuthError
 
 
-
-
-
 class StockX:
 
     __slots__ = (
