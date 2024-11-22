@@ -85,3 +85,5 @@ class Inventory:
         self._quantity_updates.clear()
 
         return UpdateResult.consolidate(quantity_results, price_results)
+    
+

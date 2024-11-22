@@ -159,3 +159,42 @@ class ItemsQuery:
             and sku_size_check(listing)
         )
     
+
+    
+from typing import TypeVar, Any, Generic
+
+
+T = TypeVar('T')
+
+
+class Filter(Generic[T]):
+    def __init__(
+            self,
+            class_: type[T],
+            extractor: Callable[[T], Any],
+            condition: Callable[[Any, set[Any]], bool],
+    ) -> None:
+        self.class_ = class_
+        self.extractor = extractor
+        self.condition = condition
+        self.allowed = set()
+
+    def include(self, values: Iterable[Any]) -> None:
+        self.allowed.update(values)
+
+    def apply(self, values: Iterable[Any]) -> None:
+        if self.allowed:
+            self.allowed.intersection_update(values)
+        else:
+            self.allowed.update(values)
+
+    def matches(self, obj: T) -> bool:
+        value = self.extractor(obj)
+        return self.condition(value, self.allowed)
+
+
+
+
+
+
+    
