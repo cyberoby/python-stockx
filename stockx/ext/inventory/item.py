@@ -146,4 +146,6 @@ class ListedItem:
         shipping_fee = self._inventory.shipping_fee
         return self.price - transaction_fee - payment_fee - shipping_fee
     
+    async def market_data(self):
+        pass
     

@@ -1,11 +1,16 @@
-from collections.abc import Iterator
+from collections.abc import (
+    Awaitable,
+    Callable,
+    Iterable, 
+    Iterator,
+)
 
 from .batch.operations import (
     UpdateResult,
     update_listings, 
     update_quantity,
 )
-from .item import ListedItem
+from .item import Item, ListedItem
 from .query import create_items_query, ItemsQuery
 from ..mock import mock_listing
 from ...api import StockX
@@ -53,6 +58,17 @@ class Inventory:
 
     async def load(self) -> None:
         await self.load_fees()
+
+    async def sell(items: Iterable[Item]) -> ListedItem:
+        pass
+
+    async def beat_lowest_ask(
+        items: Iterable[ListedItem], 
+        margin: int = 1, # computed?
+        condition: Callable[[ListedItem], bool] = None,
+        async_condition: Callable[[ListedItem], Awaitable[bool]] = None,
+    ):
+        pass
 
     async def load_fees(self) -> None:
         async for listing in self.stockx.listings.get_all_listings(
