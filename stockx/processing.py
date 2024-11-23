@@ -1,5 +1,4 @@
-from collections.abc import Callable, Iterable, Iterator
-from copy import deepcopy
+from collections.abc import Iterable, Iterator
 from functools import reduce
 from itertools import groupby
 from operator import attrgetter

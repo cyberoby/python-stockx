@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterable, Iterable
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -137,15 +136,7 @@ class ListedItem:
     def quantity_to_sync(self) -> int:
         return self.quantity - len(self.listing_ids)
     
-    def payout(self) -> float: # TODO: compute payout based on active orders
-        transaction_fee = max(
-            self._inventory.transaction_fee * self.price, 
-            self._inventory.minimum_transaction_fee
-        )
-        payment_fee = self._inventory.payment_fee * self.price
-        shipping_fee = self._inventory.shipping_fee
-        return self.price - transaction_fee - payment_fee - shipping_fee
+    def payout(self) -> float:
+        return self._inventory.calculate_payout(self.price)
     
-    async def market_data(self):
-        pass
-    
+
