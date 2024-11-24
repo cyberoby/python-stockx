@@ -21,10 +21,10 @@ ANY = None
 
 class ItemsQuery:
 
-    __slots__ = '_conditions', '_filters', 'inventory'
+    __slots__ = '_conditions', '_filters', '_inventory'
 
     def __init__(self, inventory: Inventory) -> None:
-        self.inventory = inventory
+        self._inventory = inventory
         self._filters = {
             'product_ids': Filter(
                 Listing, 
@@ -51,9 +51,9 @@ class ItemsQuery:
         }
         self._conditions = list()
 
-    async def get(self) -> list[ListedItem]:
+    async def all(self) -> list[ListedItem]:
         items = await ListedItem.from_inventory_listings(
-            inventory=self.inventory,
+            inventory=self._inventory,
             listings=self._listings(),
         )
 
@@ -66,7 +66,7 @@ class ItemsQuery:
         if all(
             _filter.empty()
             for key, _filter in self._filters.items()
-            if key not in ('variant_ids', 'product_ids')
+            if key not in ('product_ids', 'variant_ids')
         ):
             # filter by variant_id and product_id if no other filters are applied
             product_ids = self._filters['product_ids'].allowed_values
@@ -78,7 +78,7 @@ class ItemsQuery:
             filtered = self._filtered
 
         return filtered(
-            self.inventory.stockx.listings.get_all_listings(
+            self._inventory.stockx.listings.get_all_listings(
                 product_ids=product_ids,
                 variant_ids=variant_ids,
                 listing_statuses=['ACTIVE'], 
