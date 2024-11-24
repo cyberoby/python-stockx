@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from itertools import chain, groupby
 from typing import TypeAlias
 
-from ..item import ListedItem, ListedItem
+from ..item import Item, ListedItem
 from ....models import (
     BatchCreateResult,
     BatchUpdateResult,
@@ -49,7 +49,7 @@ class ErrorDetail:
 
 @dataclass(slots=True, frozen=True)
 class UpdateResult:
-    item: ListedItem | ListedItem| None = None
+    item: Item | ListedItem | None = None
     created: tuple[str, ...] = field(default_factory=tuple)
     updated: tuple[str, ...] = field(default_factory=tuple)
     deleted: tuple[str, ...] = field(default_factory=tuple)

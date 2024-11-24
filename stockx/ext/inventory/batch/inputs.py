@@ -1,16 +1,16 @@
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from itertools import batched
 
-from ..item import ListedItem, ListedItem
+from ..item import Item, ListedItem
 from ....models import BatchCreateInput, BatchUpdateInput
 from ....processing import group_and_sum
 
 
 def create_listings_inputs(
-        items: Iterable[ListedItem], 
+        items: Iterable[Item], 
         currency: str, 
         batch_size: int
-) -> batched[BatchCreateInput]:
+) -> Iterator[tuple[BatchCreateInput, ...]]:
     grouped_items = group_and_sum(
         items, 
         group_keys=('variant_id', 'price'), 
@@ -32,7 +32,7 @@ def sync_listings_inputs(
         items: Iterable[ListedItem], 
         currency: str, 
         batch_size: int
-) -> batched[BatchCreateInput]:
+) -> Iterator[tuple[BatchCreateInput, ...]]:
     grouped_items = group_and_sum(
         items, 
         group_keys=('variant_id', 'price'), 
@@ -54,7 +54,7 @@ def update_listings_inputs(
         items: Iterable[ListedItem], 
         currency: str, 
         batch_size: int
-) -> batched[BatchUpdateInput]:
+) -> Iterator[tuple[BatchUpdateInput, ...]]:
     inputs = [
         BatchUpdateInput(
             listing_id=listing_id,
@@ -71,5 +71,5 @@ def update_listings_inputs(
 def delete_listings_inputs(
         listing_ids: Iterable[str], 
         batch_size: int
-) -> batched[str]:
+) -> Iterator[tuple[str, ...]]:
     return batched(listing_ids, batch_size)

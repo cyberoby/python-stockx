@@ -28,19 +28,21 @@ class StockXAPIClient:
             version: str,
             x_api_key: str,
             client_id: str,
-            client_secret: str, # TODO: maybe move last 3 attr to login()
+            client_secret: str,
+            refresh_token: str, # TODO: later implement token as well or authentication
     ) -> None:
         self.url = f'https://{hostname}/{version}'
         self.x_api_key = x_api_key
         self.client_id = client_id
         self.client_secret = client_secret
+        self.refresh_token = refresh_token
         
         self._is_initialized: bool = False
         self._session: aiohttp.ClientSession = None
         self._refresh_task: asyncio.Task = None
 
-    async def initialize(self, refresh_token: str) -> None:
-        refresh = self._refresh_session(refresh_token)
+    async def initialize(self) -> None:
+        refresh = self._refresh_session()
         self._refresh_task = asyncio.create_task(refresh)
         await asyncio.sleep(2)
 
@@ -99,23 +101,23 @@ class StockXAPIClient:
         except aiohttp.ClientError as e:
             raise StockXAPIException('Request failed') from e # TODO custom exceptions
         
-    async def _refresh_session(self, refresh_token: str) -> None:
+    async def _refresh_session(self) -> None:
         while True:
             if self._session: 
                 await self._session.close() # TODO: don't close session, just change token
-            headers = await self._login(refresh_token)
+            headers = await self._login()
             self._session = aiohttp.ClientSession(headers=headers) 
             self._is_initialized = True
             await asyncio.sleep(REFRESH_TIME)
 
-    async def _login(self, refresh_token: str) -> dict:
+    async def _login(self) -> dict:
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         refresh_data = {
             'grant_type': GRANT_TYPE,
             'client_id': self.client_id,
             'client_secret': self.client_secret,
             'audience': AUDIENCE,
-            'refresh_token': refresh_token
+            'refresh_token': self.refresh_token
         }
         async with aiohttp.ClientSession() as session:
             async with session.post(

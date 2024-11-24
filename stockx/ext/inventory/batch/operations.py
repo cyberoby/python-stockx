@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import (
+    Callable, 
+    Iterable, 
+    Iterator,
+)
 from itertools import chain
 
 from .inputs import (
@@ -10,7 +14,7 @@ from .inputs import (
     sync_listings_inputs,
 )
 from .results import UpdateResult
-from ..item import ListedItem, ListedItem
+from ..item import Item, ListedItem
 from ....api import StockX, Batch
 from ....exceptions import BatchTimeOutError
 from ....models import BatchCreateInput
@@ -63,7 +67,7 @@ async def update_quantity(
 
 async def _create_listings(
         stockx: StockX,
-        items: Iterable[ListedItem],
+        items: Iterable[Item | ListedItem],
         inputs_factory: Callable[..., Iterable[Iterable[BatchCreateInput]]],
 ) -> Iterator[UpdateResult]:
     batch_ids = []
@@ -85,7 +89,7 @@ async def increase_listings(
 
 async def publish_listings(
         stockx: StockX,
-        items: Iterable[ListedItem]
+        items: Iterable[Item]
 ) -> Iterator[UpdateResult]:
     return await _create_listings(stockx, items, create_listings_inputs)
 

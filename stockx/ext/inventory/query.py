@@ -6,11 +6,14 @@ from collections.abc import (
     Callable,
     Iterable,
 )
-
-from .inventory import Inventory
+from typing import TYPE_CHECKING
+    
 from .item import ListedItem
 from ...filter import Filter
 from ...models import Listing
+
+if TYPE_CHECKING:
+    from .inventory import Inventory
 
 
 ANY = None

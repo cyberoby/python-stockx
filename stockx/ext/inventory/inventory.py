@@ -1,10 +1,11 @@
+from __future__ import annotations
 from collections.abc import (
     Awaitable,
     Callable,
     Iterable, 
     Iterator,
 )
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from .batch.operations import (
     UpdateResult,
@@ -13,14 +14,14 @@ from .batch.operations import (
     update_quantity,
 )
 from .item import ListedItem
-from .market import (
-    ItemMarketData, 
-    MarketValue,
-    create_item_market_data, 
-)
-from .query import ItemsQuery, create_items_query
+from .market import create_item_market_data
+from .query import create_items_query
 from ..mock import mock_listing
 from ...api import StockX
+
+if TYPE_CHECKING:
+    from .market import ItemMarketData, MarketValue
+    from .query import ItemsQuery
 
 
 I = TypeVar('I')
@@ -74,29 +75,15 @@ class Inventory:
         self._price_updates: set[ListedItem] = set()
         self._quantity_updates: set[ListedItem] = set()
 
-    def register_price_change(self, item: ListedItem) -> None:
-        self._price_updates.add(item)
-
-    def register_quantity_change(self, item: ListedItem) -> None:
-        self._quantity_updates.add(item)
-
-    def items(self) -> ItemsQuery:
-        return create_items_query(self)
+    async def __aenter__(self) -> Inventory:
+        await self.load()
+        return self
+    
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        await self.update()
 
     async def load(self) -> None:
         await self.load_fees()
-
-    async def sell(self, items: Iterable[ListedItem]) -> list[ListedItem]:
-        results = await publish_listings(self.stockx, items)
-        return [
-            ListedItem(
-                item=result.item, 
-                inventory=self, 
-                listing_ids=result.created
-            )
-            for result in results
-            if result.created
-        ]
 
     async def load_fees(self) -> None:
         async for listing in self.stockx.listings.get_all_listings(
@@ -121,14 +108,8 @@ class Inventory:
         
         raise RuntimeError('Unable to load fees. Level 1 fees applied.')
     
-    async def update(self) -> Iterator[UpdateResult]:
-        quantity_results = await update_quantity(self._quantity_updates)
-        price_results = await update_listings(self._price_updates)
-
-        self._price_updates.clear()
-        self._quantity_updates.clear()
-
-        return UpdateResult.consolidate(quantity_results, price_results)
+    def items(self) -> ItemsQuery:
+        return create_items_query(self)
     
     async def get_item_market_data(
             self, 
@@ -145,7 +126,11 @@ class Inventory:
             if data.variant_id == item.variant_id
         )
         
-        return create_item_market_data(variant_market_data, self)
+        return create_item_market_data(
+            market_data=variant_market_data, 
+            payout_calculator=self.calculate_payout, 
+            currency=self.currency
+        )
     
     def calculate_payout(self, amount: float) -> float:  # TODO: compute payout based on active orders
         transaction_fee = max(
@@ -159,6 +144,33 @@ class Inventory:
             - self.shipping_fee
         )
     
+    def register_price_change(self, item: ListedItem) -> None:
+        self._price_updates.add(item)
+
+    def register_quantity_change(self, item: ListedItem) -> None:
+        self._quantity_updates.add(item)
+
+    async def update(self) -> Iterator[UpdateResult]:
+        quantity_results = await update_quantity(self._quantity_updates)
+        price_results = await update_listings(self._price_updates)
+
+        self._price_updates.clear()
+        self._quantity_updates.clear()
+
+        return UpdateResult.consolidate(quantity_results, price_results)
+    
+    async def sell(self, items: Iterable[ListedItem]) -> list[ListedItem]:
+        results = await publish_listings(self.stockx, items)
+        return [
+            ListedItem(
+                item=result.item, 
+                inventory=self, 
+                listing_ids=result.created
+            )
+            for result in results
+            if result.created
+        ]
+
     async def beat_lowest_ask(
             self,
             items: Iterable[ListedItem], 

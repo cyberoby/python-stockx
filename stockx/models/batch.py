@@ -41,17 +41,17 @@ class BatchResultBase(StockXBaseModel):
 
 @dataclass(frozen=True, slots=True)
 class BatchCreateResult(BatchResultBase):
-    listing_input: BatchCreateInput
+    listing_input: BatchCreateInput | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class BatchDeleteResult(BatchResultBase):
-    listing_input: BatchDeleteInput
+    listing_input: BatchDeleteInput | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class BatchUpdateResult(BatchResultBase):
-    listing_input: BatchUpdateInput
+    listing_input: BatchUpdateInput | None = None # TODO: mmh? what happens if its not present?
 
 
 @dataclass(frozen=True, slots=True)

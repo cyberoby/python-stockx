@@ -1,6 +1,8 @@
-from .client import StockXAPIClient
+from __future__ import annotations
+
 from .batch import Batch
 from .catalog import Catalog
+from .client import StockXAPIClient
 from .listings import Listings
 from .orders import Orders
 from ..exceptions import StockXAuthError
@@ -10,39 +12,37 @@ class StockX:
 
     __slots__ = (
         '_batch', 
-        '_client', 
         '_catalog', 
+        '_initialized', 
         '_listings', 
         '_orders', 
-        'version',
+        'client', 
     )
 
-    def __init__(self, version: str) -> None:
-        self.version = version
-        self._batch = None
+    def __init__(self, client: StockXAPIClient) -> None:
+        self.client = client
+        self._initialized = False
 
-    async def login(
-            self,
-            x_api_key: str,
-            client_id: str,
-            client_secret: str,
-            refresh_token: str
-    ) -> None:
-        self._client = StockXAPIClient(
-            hostname='api.stockx.com', 
-            version=self.version, 
-            x_api_key=x_api_key, 
-            client_id=client_id, 
-            client_secret=client_secret
-        )
+    async def login(self) -> None:
+        if self._initialized:
+            return
 
-        await self._client.initialize(refresh_token)
+        await self.client.initialize()
 
-        self._batch = Batch(self._client)
-        self._catalog = Catalog(self._client)
-        self._listings = Listings(self._client)
-        self._orders = Orders(self._client)
+        self._batch = Batch(self.client)
+        self._catalog = Catalog(self.client)
+        self._listings = Listings(self.client)
+        self._orders = Orders(self.client)
 
+        self._initialized = True
+
+    async def __aenter__(self) -> StockX:
+        await self.login()
+        return self
+    
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        await self.close()
+        
     @property
     def batch(self) -> Batch:
         return self._get('batch')
@@ -60,9 +60,15 @@ class StockX:
         return self._get('orders')
         
     async def close(self) -> None:
-        if self._client:
-            await self._client.close()
-            self._client = None
+        if self.client:
+            try:
+                await self.client.close()
+            except Exception as e:
+                # TODO: log Error while closing StockX client: {e=}
+                pass
+            finally:
+                self.client = None
+                self._initialized = False
 
     def _get(self, api):
         try:

@@ -3,15 +3,15 @@ from __future__ import annotations
 from collections.abc import AsyncIterable, Iterable
 from typing import TYPE_CHECKING
 
+from ...models import Listing
+
 if TYPE_CHECKING:
     from .inventory import Inventory
 
-from ...models import Listing
 
+class Item:
 
-class ListedItem:
-
-    __slots__ = 'product_id', 'variant_id', 'price', 'quantity'
+    __slots__ = '_price', '_quantity', 'product_id', 'variant_id',
 
     def __init__(
             self,
@@ -27,17 +27,17 @@ class ListedItem:
 
     @property
     def price(self) -> float:
-        return self.__price
+        return self._price
     
     @price.setter
     def price(self, value: float) -> None:
         if value < 0:
             raise ValueError('Price must be greater than 0.')
-        self.__price = value
+        self._price = value
 
     @property
     def quantity(self) -> int:
-        return self.__quantity
+        return self._quantity
     
     @quantity.setter
     def quantity(self, value: int) -> None:
@@ -45,23 +45,32 @@ class ListedItem:
             raise ValueError('Quantity must be greater than 0.') 
         if int(value) != value:
             raise ValueError('Quantity must be an integer.')   
-        self.__quantity = value
+        self._quantity = value
+
+    def __repr__(self) -> str:
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.product_id=}, '
+            f'{self.variant_id=}, '
+            f'{self.price=}, '
+            f'{self.quantity=})'
+        ).replace('self.', '')
 
     
 class ListedItem:
     
-    __slots__ = '_size', '_style_id', '_inventory', '_item',  'listing_ids'
+    __slots__ = '_inventory', '_item',  '_size', '_style_id', 'listing_ids'
 
     def __init__(
             self,
-            item: ListedItem,
+            item: Item,
             inventory: Inventory,
             listing_ids: Iterable[str],
     ) -> None:
         self._item = item
         self._inventory = inventory
+        self._item.quantity = len(listing_ids)
         self.listing_ids = list(listing_ids)
-        self.quantity = len(listing_ids)
 
         self._style_id = None
         self._size = None
@@ -82,7 +91,7 @@ class ListedItem:
                 amounts_dict[listing.amount].listing_ids.append(listing.id)
             else:
                 item = ListedItem(
-                    item=ListedItem(
+                    item=Item(
                         product_id=listing.product.id, 
                         variant_id=listing.variant.id, 
                         price=listing.amount, 
@@ -139,4 +148,11 @@ class ListedItem:
     def payout(self) -> float:
         return self._inventory.calculate_payout(self.price)
     
+    def __repr__(self) -> str:
+        return (
+            f'{self.__class__.__name__}('
+            f'{self._item=}, '
+            f'{self._inventory=}, '
+            f'{self.listing_ids=}, '
+        ).replace('self._', '').replace('self.', '')
 

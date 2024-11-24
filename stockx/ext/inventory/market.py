@@ -1,10 +1,8 @@
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import NamedTuple, TYPE_CHECKING
+from typing import NamedTuple
 
 from ...models import MarketData
-
-if TYPE_CHECKING:
-    from .inventory import Inventory
 
 
 class MarketValue(NamedTuple):
@@ -24,22 +22,23 @@ class ItemMarketData:
 
 def create_item_market_data(
         market_data: MarketData, 
-        inventory: Inventory
+        payout_calculator: Callable[[float], float],
+        currency: str,
 ) -> ItemMarketData:
     
     def market_value(amount):
         if not amount:
             return None
-        return MarketValue(amount, inventory.calculate_payout(amount))
+        return MarketValue(amount, payout_calculator(amount))
     
-    if market_data.currency_code != inventory.currency:
+    if market_data.currency_code != currency:
         raise ValueError(
-                f'Currency mismatch: {inventory.currency=} '
+                f'Currency mismatch: {currency=} '
                 f'{market_data.currency_code=}'
             )
 
     return ItemMarketData(
-        currency=inventory.currency,
+        currency=currency,
         lowest_ask=market_value(market_data.lowest_ask_amount),
         highest_bid=market_value(market_data.highest_bid_amount),
         earn_more=market_value(market_data.earn_more_amount),
