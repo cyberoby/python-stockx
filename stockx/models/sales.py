@@ -70,6 +70,10 @@ class Order(StockXBaseModel):
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
+    @property
+    def number(self) -> str:
+        return self.order_number
+
 
 @dataclass(frozen=True, slots=True)
 class OrderDetail(Order):
@@ -81,6 +85,18 @@ class OrderShort(StockXBaseModel):
     order_number: str
     order_status: str = ''
     order_created_at: datetime | None = None
+
+    @property
+    def number(self) -> str:
+        return self.order_number
+    
+    @property
+    def status(self) -> str:
+        return self.order_status
+    
+    @property
+    def created_at(self) -> datetime | None:
+        return self.order_created_at
 
 
 @dataclass(frozen=True, slots=True)

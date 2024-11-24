@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from collections.abc import Iterable
+from dataclasses import (
+    Field,
+    dataclass, 
+    field,
+    fields,
+)
 from datetime import datetime
 from inspect import get_annotations
 from types import UnionType
@@ -49,12 +55,26 @@ class StockXBaseModel:
         return {**super_annotations, **this_annotations}
 
     
-    # def __str__(self) -> str:
-        #string_args = (
-        #    f'    {field.name}={str(getattr(self, field.name))}' 
-        #    for field in fields(self)
-        #)
-        #return f'{self.__class__.__name__}(\n{'\n'.join(string_args)}\n)'
+    def __str__(self, level: int = 0) -> str:
+        indent = '  ' * level
+        class_name = self.__class__.__name__
+
+        def format(value, level):
+            if isinstance(value, StockXBaseModel):
+                return f'\n{value.__str__(level + 1)}'
+            elif isinstance(value, Iterable) and not isinstance(value, str):
+                return f''.join(format(item, level + 1) for item in value)
+            return str(value)
+        
+        def value(field: Field):
+            return getattr(self, field.name)
+
+        attributes = '\n'.join(
+            f'{indent}  {field.name}: {format(value(field), level + 1)}'
+            for field in fields(self)
+        )
+
+        return f'{indent}{class_name}:\n{attributes}'
 
 
 def _camel_to_snake(json: dict[str, Any]) -> dict[str, Any]:

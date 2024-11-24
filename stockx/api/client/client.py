@@ -11,13 +11,6 @@ GRANT_TYPE = 'refresh_token'
 REFRESH_URL = 'https://accounts.stockx.com/oauth/token'
 REFRESH_TIME = 3600
 AUDIENCE = 'gateway.stockx.com'
-HOSTNAME = 'api.stockx.com'
-VERSION = 'v2'
-
-CLIENT_ID = load_dotenv('CLIENT_ID')
-CLIENT_SECRET = load_dotenv('CLIENT_SECRET')
-X_API_KEY = load_dotenv('X_API_KEY')
-REFRESH_TOKEN = load_dotenv('REFRESH_TOKEN')
 
 
 class StockXAPIClient:
@@ -37,7 +30,7 @@ class StockXAPIClient:
         self.client_secret = client_secret
         self.refresh_token = refresh_token
         
-        self._is_initialized: bool = False
+        self._initialized: bool = False
         self._session: aiohttp.ClientSession = None
         self._refresh_task: asyncio.Task = None
 
@@ -74,7 +67,7 @@ class StockXAPIClient:
             params: dict = None,
             data: dict = None
     ) -> Response:
-        if not self._is_initialized:
+        if not self._initialized:
             raise StockXAPIException('Client must be initialized before making requests.')
         
         if params:
@@ -107,7 +100,7 @@ class StockXAPIClient:
                 await self._session.close() # TODO: don't close session, just change token
             headers = await self._login()
             self._session = aiohttp.ClientSession(headers=headers) 
-            self._is_initialized = True
+            self._initialized = True
             await asyncio.sleep(REFRESH_TIME)
 
     async def _login(self) -> dict:
