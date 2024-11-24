@@ -4,7 +4,7 @@ from collections.abc import (
     Iterable, 
     Iterator,
 )
-from operator import xor
+from typing import TypeVar
 
 from .batch.operations import (
     UpdateResult,
@@ -12,23 +12,34 @@ from .batch.operations import (
     update_listings, 
     update_quantity,
 )
-from .item import Item, ListedItem
+from .item import ListedItem
 from .market import (
     ItemMarketData, 
     MarketValue,
     create_item_market_data, 
 )
-from .query import create_items_query, ItemsQuery
+from .query import ItemsQuery, create_items_query
 from ..mock import mock_listing
 from ...api import StockX
 
 
-DynamicPrice = Callable[[ListedItem], float]  
-AsyncDynamicPrice = Callable[[ListedItem], Awaitable[float]]  
-Price = float
+I = TypeVar('I')
+O = TypeVar('O')
 
-Condition = Callable[[ListedItem], bool]  
-AsyncCondition = Callable[[ListedItem], Awaitable[bool]]
+type ComputedValue[I, O] = O | Callable[[I], O] | Callable[[I], Awaitable[O]]
+
+Amount = ComputedValue[ListedItem, float]
+Condition = ComputedValue[ListedItem, bool]
+
+
+async def computed_value(input: I, value: ComputedValue[I, O]) -> O:
+    if callable(value):
+        try:
+            return await value(input)
+        except TypeError:
+                return value(input)
+    else:
+        return value
 
 
 class Inventory:
@@ -75,7 +86,7 @@ class Inventory:
     async def load(self) -> None:
         await self.load_fees()
 
-    async def sell(self, items: Iterable[Item]) -> list[ListedItem]:
+    async def sell(self, items: Iterable[ListedItem]) -> list[ListedItem]:
         results = await publish_listings(self.stockx, items)
         return [
             ListedItem(
@@ -84,59 +95,8 @@ class Inventory:
                 listing_ids=result.created
             )
             for result in results
+            if result.created
         ]
-
-    async def beat_lowest_ask(
-            self,
-            items: Iterable[ListedItem], 
-            market_value: Callable[[ItemMarketData], MarketValue],
-            beat_by: Callable[[ListedItem], float] | float = 1, # computed?
-            async_beat_by: Callable[[ListedItem], Awaitable[float]] | None = None, 
-            percentage: bool = False,
-            condition: Callable[[ListedItem], bool] | None = None,
-            async_condition: Callable[[ListedItem], Awaitable[bool]] | None = None,
-    ):
-        if beat_by != 1 and async_beat_by:
-            raise ValueError("Provide either 'beat_by' or 'async_beat_by', not both.")
-        
-        async def new_price(item):
-            if beat_by
-            market_data = await self.get_item_market_data(item)
-            lowest_ask = market_data.lowest_ask.amount
-            if percentage:
-                change = change * lowest_ask
-        
-    
-    async def change_price(
-            self,
-            items: Iterable[Item],
-            new_price: DynamicPrice | AsyncDynamicPrice | Price,
-            condition: Condition | AsyncCondition | None = None,
-    ):
-        async def check(item):
-            if not condition:
-                return True
-            try:
-                return await condition(item)
-            except TypeError:
-                return condition(item)
-            
-        items_to_update = [item for item in items if await check(item)]
-
-        for item in items_to_update:
-            if not callable(new_price):
-                item.price = new_price
-                continue
-            try:
-                item.price = await new_price(item)
-            except TypeError:
-                item.price = new_price(item)
-
-        
-        await update_listings(self.stockx, items_to_update)
-    
-        self._price_updates.difference_update(items_to_update)
-
 
     async def load_fees(self) -> None:
         async for listing in self.stockx.listings.get_all_listings(
@@ -172,7 +132,7 @@ class Inventory:
     
     async def get_item_market_data(
             self, 
-            item: Item | ListedItem
+            item: ListedItem | ListedItem
     ) -> ItemMarketData:
         market_data = await self.stockx.catalog.get_product_market_data(
             product_id=item.product_id, 
@@ -198,6 +158,92 @@ class Inventory:
             - self.payment_fee * amount 
             - self.shipping_fee
         )
+    
+    async def beat_lowest_ask(
+            self,
+            items: Iterable[ListedItem], 
+            beat_by: Amount = 1,
+            percentage: bool = False,
+            condition: Condition = True,
+    ):
+        return await self._beat_market_value(
+            items=items, 
+            get_market_value=lambda m: m.lowest_ask, 
+            beat_by=beat_by, 
+            condition=condition, 
+            percentage=percentage
+        )
+
+    async def beat_sell_faster(
+            self,
+            items: Iterable[ListedItem], 
+            beat_by: Amount = 0,
+            percentage: bool = False,
+            condition: Condition = True,
+    ):
+        return await self._beat_market_value(
+            items=items, 
+            get_market_value=lambda m: m.sell_faster, 
+            beat_by=beat_by, 
+            condition=condition, 
+            percentage=percentage
+        )
+
+    async def beat_earn_more(
+            self,
+            items: Iterable[ListedItem], 
+            beat_by: Amount = 0,
+            percentage: bool = False,
+            condition: Condition = True,
+    ):
+        return await self._beat_market_value(
+            items=items, 
+            get_market_value=lambda m: m.earn_more, 
+            beat_by=beat_by, 
+            condition=condition, 
+            percentage=percentage
+        )
+    
+    async def change_price(
+            self,
+            items: Iterable[ListedItem],
+            new_price: Amount,
+            condition: Condition = True,
+    ):
+        items_to_update = [
+            item for item in items 
+            if await computed_value(item, condition)
+        ]
+
+        for item in items_to_update:
+            item.price = await computed_value(item, new_price)
+
+        await update_listings(self.stockx, items_to_update)
+    
+        self._price_updates.difference_update(items_to_update)
+    
+    async def _beat_market_value(
+            self,
+            items: Iterable[ListedItem], 
+            get_market_value: Callable[[ItemMarketData], MarketValue | None],
+            beat_by: Amount,
+            percentage: bool,
+            condition: Condition,
+    ):
+        async def new_price(item):
+            change = await computed_value(item, beat_by)
+            
+            market_data = await self.get_item_market_data(item)
+            market_value = get_market_value(market_data)
+
+            if not market_value:
+                pass # TODO handle null cases
+
+            amount = market_value.amount
+
+            return amount * (1 - change) if percentage else amount - change
+        
+        return await self.change_price(items, new_price, condition)
         
     
 

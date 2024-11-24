@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from itertools import chain, groupby
 from typing import TypeAlias
 
-from ..item import Item, ListedItem
+from ..item import ListedItem, ListedItem
 from ....models import (
     BatchCreateResult,
     BatchUpdateResult,
@@ -49,7 +49,7 @@ class ErrorDetail:
 
 @dataclass(slots=True, frozen=True)
 class UpdateResult:
-    item: Item | ListedItem| None = None
+    item: ListedItem | ListedItem| None = None
     created: tuple[str, ...] = field(default_factory=tuple)
     updated: tuple[str, ...] = field(default_factory=tuple)
     deleted: tuple[str, ...] = field(default_factory=tuple)
@@ -63,7 +63,7 @@ class UpdateResult:
     ) -> Iterator[UpdateResult]:
         
         # Group results by item
-        grouped_results: defaultdict[Item, list[UpdateResult]] = defaultdict(list)
+        grouped_results: defaultdict[ListedItem, list[UpdateResult]] = defaultdict(list)
         for result in chain(*results):
             grouped_results[result.item].append(result)
 
@@ -121,7 +121,7 @@ class UpdateResult:
     @classmethod
     def from_batch_create(
             cls, 
-            items: Iterable[Item],
+            items: Iterable[ListedItem],
             results: Iterable[BatchCreateResult],
     ) -> Iterator[UpdateResult]:
         item_map = {(item.variant_id, item.price): item for item in items}

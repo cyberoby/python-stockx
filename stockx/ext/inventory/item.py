@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 from ...models import Listing
 
 
-class Item:
+class ListedItem:
 
     __slots__ = 'product_id', 'variant_id', 'price', 'quantity'
 
@@ -54,7 +54,7 @@ class ListedItem:
 
     def __init__(
             self,
-            item: Item,
+            item: ListedItem,
             inventory: Inventory,
             listing_ids: Iterable[str],
     ) -> None:
@@ -82,7 +82,7 @@ class ListedItem:
                 amounts_dict[listing.amount].listing_ids.append(listing.id)
             else:
                 item = ListedItem(
-                    item=Item(
+                    item=ListedItem(
                         product_id=listing.product.id, 
                         variant_id=listing.variant.id, 
                         price=listing.amount, 

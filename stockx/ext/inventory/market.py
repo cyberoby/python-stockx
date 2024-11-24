@@ -1,6 +1,5 @@
-from collections import namedtuple
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import NamedTuple, TYPE_CHECKING
 
 from ...models import MarketData
 
@@ -8,8 +7,10 @@ if TYPE_CHECKING:
     from .inventory import Inventory
 
 
-MarketValue = namedtuple('MarketValue', ['amount', 'payout'])
-
+class MarketValue(NamedTuple):
+    amount: float
+    payout: float
+    
 
 @dataclass(slots=True, frozen=True)
 class ItemMarketData:

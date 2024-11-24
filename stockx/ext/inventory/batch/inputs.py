@@ -1,13 +1,13 @@
 from collections.abc import Iterable
 from itertools import batched
 
-from ..item import Item, ListedItem
+from ..item import ListedItem, ListedItem
 from ....models import BatchCreateInput, BatchUpdateInput
 from ....processing import group_and_sum
 
 
 def create_listings_inputs(
-        items: Iterable[Item], 
+        items: Iterable[ListedItem], 
         currency: str, 
         batch_size: int
 ) -> batched[BatchCreateInput]:
