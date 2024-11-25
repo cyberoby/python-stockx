@@ -106,7 +106,6 @@ class Batch(StockXAPIBase):
             items: Iterable[BatchUpdateInput],
     ) -> BatchStatus:
         data = {'items': [item.to_json() for item in items]}
-        print(data)
         response = await self.client.post(
             endpoint='/selling/batch/update-listing', 
             data=data
@@ -146,10 +145,10 @@ class Batch(StockXAPIBase):
     
 async def batch_completed(
         batch_ids: Iterable[str], 
-        batch_status_coro: Callable[[str], Awaitable[BatchStatus]], 
+        get_batch_status: Callable[[str], Awaitable[BatchStatus]], 
         timeout: int,
 ) -> None:
-    completed_batch_ids = set()
+    finished_batch_ids = set()
     pending_batch_ids = set(batch_ids)
 
     sleep, waited = 1, 0
@@ -157,13 +156,16 @@ async def batch_completed(
         await asyncio.sleep(sleep)
 
         for batch_id in pending_batch_ids:
-            status = await batch_status_coro(batch_id)
-            if status.item_statuses.completed == status.total_items:
-                completed_batch_ids.add(batch_id)
+            status = await get_batch_status(batch_id)
+            if (
+                status.item_statuses.completed
+                + status.item_statuses.failed
+                == status.total_items
+            ):
+                finished_batch_ids.add(batch_id)
 
-        pending_batch_ids.difference_update(completed_batch_ids)
+        pending_batch_ids.difference_update(finished_batch_ids)
         if len(pending_batch_ids) == 0:
-            print('COMPLETED!!!!!!')
             return
         
         waited += sleep

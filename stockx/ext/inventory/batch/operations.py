@@ -103,7 +103,7 @@ async def update_listings(
         batch_status = await stockx.batch.update_listings(inputs)
         batch_ids.append(batch_status.batch_id)
 
-    print(f'{batch_ids=}')
+    print(batch_ids) # TODO: remove later
 
     results = await _batch_results(stockx, batch_ids, update_listings, 60)
 
@@ -118,6 +118,8 @@ async def delete_listings(
     for inputs in delete_listings_inputs(listing_ids, 500):
         batch_status = await stockx.batch.delete_listings(inputs)
         batch_ids.append(batch_status.batch_id)
+
+    print(batch_ids) # TODO: remove later
 
     results = await _batch_results(stockx, batch_ids, delete_listings, 60)
 
@@ -141,5 +143,5 @@ async def _batch_results(stockx, batch_ids, func, timeout):
 
     return [
         result for batch_id in batch_ids
-        for result in await get_items(batch_id, status='COMPLETED')
+        for result in await get_items(batch_id, status='COMPLETED') # TODO: maybe retrieve others as well?
     ]

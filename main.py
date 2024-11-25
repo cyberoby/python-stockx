@@ -30,22 +30,26 @@ async def main():
     )
     
     async with StockX(client) as stockx:
-        # async with Inventory(stockx) as inventory:
-        #     items = await inventory.items().filter_by(style_ids=['DN1266-010']).all()
-        #     item = items[0]
-        #     print(item.style_id)
-        #     print(item.name)
-        #     print(item.size)
+        async with Inventory(stockx) as inventory:
+            items = await (
+                inventory.items().
+                filter(lambda item: 'DA8857-001' in item.style_id)
+                .all()
+            )
+            item = items[0]
+            print(item.style_id)
+            print(item.name)
+            print(item.size)
 
 
-        batch_id = '94d49028-ce3d-4b72-9cac-68bd0681a178'
-        # status = await stockx.batch.update_listings_status(batch_id)
-        # items = await stockx.batch.update_listings_items(batch_id)
-        # print(status)
-        # print('-------')
-        # for item in items:
-        #     print(item)
-        await stockx.batch.update_listings_completed([batch_id], 10)
+        batch_id = 'af6747c1-60ed-4074-a3c6-7b4a17411229'
+        status = await stockx.batch.delete_listings_status(batch_id)
+        items = await stockx.batch.delete_listings_items(batch_id)
+        print(status)
+        print('-------')
+        for item in items:
+            print(item)
+
         
 
 if __name__ == '__main__':

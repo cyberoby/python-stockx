@@ -137,10 +137,16 @@ class UpdateResult:
             if not item:
                 continue
 
-            created = tuple(result.listing_id for result in item_results)
+            created = tuple(r.listing_id for r in item_results if r.listing_id)
+            failed = tuple(r.error for r in results if r.error)
             errors_detail = tuple(ErrorDetail.from_results(item_results))
             
-            yield cls(item, created, errors_detail=errors_detail)
+            yield cls(
+                item=item, 
+                created=created, 
+                failed=failed, 
+                errors_detail=errors_detail
+            )
 
     @classmethod
     def from_batch_delete(

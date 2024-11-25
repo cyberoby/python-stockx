@@ -80,7 +80,10 @@ class Inventory:
         return self
     
     async def __aexit__(self, exc_type, exc_value, traceback):
-        await self.update()
+        results = await self.update()
+        for result in results:
+            print(result)
+        # TODO: return True and suppress exc?
 
     async def load(self) -> None:
         await self.load_fees()
@@ -151,8 +154,24 @@ class Inventory:
         self._quantity_updates.add(item)
 
     async def update(self) -> Iterator[UpdateResult]:
-        quantity_results = await update_quantity(self.stockx, self._quantity_updates)
-        price_results = await update_listings(self.stockx, self._price_updates)
+        quantity_results, price_results = [], []
+        if self._quantity_updates:
+            for item in self._quantity_updates:
+                print(f'{item.name=}')
+                print(f'{item.size=}')
+                print(f'{item.quantity=}')
+                print(f'{item.quantity_to_sync()=}')
+                print(f'{item.payout()=}')
+            quantity_results = await update_quantity(
+                stockx=self.stockx, 
+                items=self._quantity_updates
+            )
+        if self._price_updates:
+            print('price')
+            price_results = await update_listings(
+                stockx=self.stockx, 
+                items=self._price_updates
+            )
 
         self._price_updates.clear()
         self._quantity_updates.clear()

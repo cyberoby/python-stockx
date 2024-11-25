@@ -95,7 +95,7 @@ class ListedItem:
             amounts_dict = items.setdefault(listing.variant.id, {})
             
             if listing.amount in amounts_dict:
-                amounts_dict[listing.amount].quantity += 1
+                amounts_dict[listing.amount]._item.quantity += 1 
                 amounts_dict[listing.amount].listing_ids.append(listing.id)
             else:
                 item = ListedItem(

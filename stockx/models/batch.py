@@ -96,7 +96,7 @@ class BatchUpdateInput(StockXBaseModel):
 
 @dataclass(frozen=True, slots=True)
 class BatchDeleteInput(StockXBaseModel):
-    id: str  # TODO: check if its id or listing_id in the response
+    id: str
 
     @property
     def listing_id(self) -> str:
