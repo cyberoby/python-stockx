@@ -87,7 +87,7 @@ class Inventory:
 
     async def load_fees(self) -> None:
         async for listing in self.stockx.listings.get_all_listings(
-            listing_statuses='ACTIVE',
+            listing_statuses=['ACTIVE'],
             limit=100,
             page_size=100,
         ):
@@ -151,8 +151,8 @@ class Inventory:
         self._quantity_updates.add(item)
 
     async def update(self) -> Iterator[UpdateResult]:
-        quantity_results = await update_quantity(self._quantity_updates)
-        price_results = await update_listings(self._price_updates)
+        quantity_results = await update_quantity(self.stockx, self._quantity_updates)
+        price_results = await update_listings(self.stockx, self._price_updates)
 
         self._price_updates.clear()
         self._quantity_updates.clear()

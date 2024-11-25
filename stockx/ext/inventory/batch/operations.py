@@ -75,7 +75,7 @@ async def _create_listings(
         batch_status = await stockx.batch.create_listings(inputs)
         batch_ids.append(batch_status.batch_id)
 
-    results = await _batch_results(batch_ids, publish_listings, 60)
+    results = await _batch_results(stockx, batch_ids, publish_listings, 60)
     
     return UpdateResult.from_batch_create(items, results)
     
@@ -103,7 +103,7 @@ async def update_listings(
         batch_status = await stockx.batch.update_listings(inputs)
         batch_ids.append(batch_status.batch_id)
 
-    results = await _batch_results(batch_ids, update_listings, 60)
+    results = await _batch_results(stockx, batch_ids, update_listings, 60)
 
     return UpdateResult.from_batch_update(items, results)
 
@@ -113,11 +113,11 @@ async def delete_listings(
         listing_ids: Iterable[str]
 ) -> UpdateResult:
     batch_ids = []
-    for inputs in delete_listings_inputs(listing_ids, 'EUR', 500):
+    for inputs in delete_listings_inputs(listing_ids, 500):
         batch_status = await stockx.batch.delete_listings(inputs)
         batch_ids.append(batch_status.batch_id)
 
-    results = await _batch_results(batch_ids, delete_listings, 60)
+    results = await _batch_results(stockx, batch_ids, delete_listings, 60)
 
     return UpdateResult.from_batch_delete(results)
 
