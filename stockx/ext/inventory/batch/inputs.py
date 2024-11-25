@@ -1,4 +1,5 @@
 from collections.abc import Iterable, Iterator
+from datetime import datetime
 from itertools import batched
 
 from ..item import Item, ListedItem
@@ -59,8 +60,8 @@ def update_listings_inputs(
         BatchUpdateInput(
             listing_id=listing_id,
             amount=item.price,
-            active=True,
-            currency_code=currency
+            currency_code=currency,
+            expires_at=datetime(2024, 12, 30),
         )
         for item in items
         for listing_id in item.listing_ids

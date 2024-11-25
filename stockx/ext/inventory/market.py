@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import NamedTuple
 
 from ...models import MarketData
@@ -18,6 +18,17 @@ class ItemMarketData:
     earn_more: MarketValue | None = None
     sell_faster: MarketValue | None = None
     flex_lowest_ask: MarketValue | None = None
+
+    def __str__(self) -> str:
+        indent = '  '
+        class_name = self.__class__.__name__
+
+        attributes = '\n'.join(
+            f'{indent}  {field.name}: {getattr(self, field.name)}'
+            for field in fields(self)
+        )
+
+        return f'{class_name}:\n{attributes}'
 
 
 def create_item_market_data(

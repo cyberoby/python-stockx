@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 
 from stockx import StockX, StockXAPIClient
-from stockx.ext import search
+from stockx.ext import search, mock_listing
 from stockx.ext.inventory import Inventory
 
 
@@ -29,14 +29,24 @@ async def main():
         refresh_token=REFRESH_TOKEN
     )
     
-    async with (
-        StockX(client) as stockx,
-        Inventory(stockx) as inventory
-    ):
-        items = await inventory.items().filter(lambda item: item.payout() > 150).all()
-        for item in items:
-            print(item)
+    async with StockX(client) as stockx:
+        # async with Inventory(stockx) as inventory:
+        #     items = await inventory.items().filter_by(style_ids=['DN1266-010']).all()
+        #     item = items[0]
+        #     print(item.style_id)
+        #     print(item.name)
+        #     print(item.size)
 
+
+        batch_id = '94d49028-ce3d-4b72-9cac-68bd0681a178'
+        # status = await stockx.batch.update_listings_status(batch_id)
+        # items = await stockx.batch.update_listings_items(batch_id)
+        # print(status)
+        # print('-------')
+        # for item in items:
+        #     print(item)
+        await stockx.batch.update_listings_completed([batch_id], 10)
+        
 
 if __name__ == '__main__':
     asyncio.run(main())

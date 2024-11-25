@@ -5,7 +5,7 @@ from datetime import datetime
 def iso(datetime: datetime | None) -> str | None:
     if not datetime:
         return None
-    return f'{datetime.isoformat(timespec='seconds')}Z'
+    return f'{datetime.isoformat(timespec='seconds')}.000Z'
 
 
 def comma_separated(values: Iterable[str] | None) -> str | None:

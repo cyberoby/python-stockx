@@ -59,7 +59,14 @@ class Item:
     
 class ListedItem:
     
-    __slots__ = '_inventory', '_item',  '_size', '_style_id', 'listing_ids'
+    __slots__ = (
+        '_inventory', 
+        '_item', 
+        '_name', 
+        '_size', 
+        '_style_id', 
+        'listing_ids',
+    )
 
     def __init__(
             self,
@@ -74,6 +81,7 @@ class ListedItem:
 
         self._style_id = None
         self._size = None
+        self._name = None
 
     @classmethod
     async def from_inventory_listings(
@@ -101,6 +109,7 @@ class ListedItem:
                 )
                 item._style_id = listing.style_id
                 item._size = listing.variant_value
+                item._name = listing.product.product_name
 
                 amounts_dict[listing.amount] = item
 
@@ -141,6 +150,10 @@ class ListedItem:
     @property
     def size(self) -> str | None:
         return self._size
+    
+    @property
+    def name(self) -> str | None:
+        return self._name
     
     def quantity_to_sync(self) -> int:
         return self.quantity - len(self.listing_ids)

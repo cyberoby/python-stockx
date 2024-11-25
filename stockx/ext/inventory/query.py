@@ -81,7 +81,7 @@ class ItemsQuery:
             self._inventory.stockx.listings.get_all_listings(
                 product_ids=product_ids,
                 variant_ids=variant_ids,
-                listing_statuses=['ACTIVE'], 
+                listing_statuses=['ACTIVE', 'INACTIVE'], 
                 page_size=100,
             )
         )

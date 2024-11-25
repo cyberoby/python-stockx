@@ -18,6 +18,7 @@ async def mock_listing(
         amount=amount,
         variant_id=variants[0].id,
         currency_code=currency_code,
+        active=True,
     )
     if not await stockx.listings.operation_succeeded(create):
         pass # raise what?

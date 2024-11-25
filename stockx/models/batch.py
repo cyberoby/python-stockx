@@ -20,9 +20,9 @@ class BatchStatus(StockXBaseModel):
 
 @dataclass(frozen=True, slots=True)
 class BatchItemStatuses(StockXBaseModel):
-    queued: int | None = None
-    failed: int | None = None
-    succeeded: int | None = None # TODO is it succeeded or what?
+    queued: int = 0
+    completed: int = 0
+    failed: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,7 +30,7 @@ class BatchResultBase(StockXBaseModel):
     item_id: str
     status: str
     result: BatchItemResult | None = None
-    error: str = ''
+    error: str = ""
 
     @property
     def listing_id(self) -> str | None:
@@ -51,7 +51,9 @@ class BatchDeleteResult(BatchResultBase):
 
 @dataclass(frozen=True, slots=True)
 class BatchUpdateResult(BatchResultBase):
-    listing_input: BatchUpdateInput | None = None # TODO: mmh? what happens if its not present?
+    listing_input: BatchUpdateInput | None = (
+        None  # TODO: mmh? what happens if its not present?
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,18 +61,18 @@ class BatchCreateInput(StockXBaseModel):
     variant_id: str
     amount: float
     quantity: int | None = None
-    active: bool | None = None
-    currency_code: str = ''
+    active: bool = True
+    currency_code: str = ""
     expires_at: datetime | None = None
 
     def to_json(self) -> dict[str, Any]:
         return {
-            'active': bool(self.active),
-            'quantity': int(self.quantity),
-            'currencyCode': self.currency_code,
-            'variantId': self.variant_id,
-            'expiresAt': iso(self.expires_at),
-            'amount': str(int(self.amount)) # TODO: check if int or str
+            "variantId": self.variant_id,
+            "quantity": int(self.quantity),
+            "amount": str(int(self.amount)),
+            "expiresAt": iso(self.expires_at),
+            "currencyCode": self.currency_code,
+            "active": self.active,
         }
 
 
@@ -78,23 +80,23 @@ class BatchCreateInput(StockXBaseModel):
 class BatchUpdateInput(StockXBaseModel):
     listing_id: str
     active: bool | None = None
-    currency_code: str = ''
+    currency_code: str = ""
     expires_at: datetime | None = None
     amount: float | None = None
 
     def to_json(self) -> dict[str, Any]:
         return {
-            'active': bool(self.active),
-            'currencyCode': self.currency_code,
-            'listingId': self.listing_id,
-            'expiresAt': iso(self.expires_at),
-            'amount': str(int(self.amount)) # TODO: check if int or str
+            "listingId": self.listing_id,
+            "amount": str(int(self.amount)),
+            "expiresAt": iso(self.expires_at),
+            "currencyCode": self.currency_code,
+            "active": self.active,
         }
-    
-    
+
+
 @dataclass(frozen=True, slots=True)
 class BatchDeleteInput(StockXBaseModel):
-    id: str # TODO: check if its id or listing_id in the response  
+    id: str  # TODO: check if its id or listing_id in the response
 
     @property
     def listing_id(self) -> str:
@@ -104,4 +106,4 @@ class BatchDeleteInput(StockXBaseModel):
 @dataclass(frozen=True, slots=True)
 class BatchItemResult(StockXBaseModel):
     listing_id: str
-    ask_id: str = ''
+    ask_id: str = ""

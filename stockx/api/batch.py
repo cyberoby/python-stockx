@@ -24,14 +24,19 @@ class Batch(StockXAPIBase):
             items: Iterable[BatchCreateInput],
     ) -> BatchStatus:
         data = {'items': [item.to_json() for item in items]}
-        response = await self.client.post('/batch/create-listing', data=data)
+        response = await self.client.post(
+           endpoint='/selling/batch/create-listing', 
+           data=data
+        )
         return BatchStatus.from_json(response.data)
 
     async def create_listings_status(
             self,
             batch_id: str,
     ) -> BatchStatus:
-        response = await self.client.get(f'/batch/create-listing/{batch_id}')
+        response = await self.client.get(
+            endpoint=f'/selling/batch/create-listing/{batch_id}'
+        )
         return BatchStatus.from_json(response.data)
     
     async def create_listings_items(
@@ -42,7 +47,7 @@ class Batch(StockXAPIBase):
     ) -> list[BatchCreateResult]:
         params = {'status': status}
         response = await self.client.get(
-            f'/batch/create-listing/{batch_id}/items',
+            endpoint=f'/selling/batch/create-listing/{batch_id}/items',
             params=params,
         )
         items = response.data.get('items', [])
@@ -60,14 +65,19 @@ class Batch(StockXAPIBase):
             listing_ids = Iterable[str],
     ) -> BatchStatus:
         data = {'items': [{'listingId': id} for id in listing_ids]}
-        response = await self.client.post('/batch/delete-listing', data=data)
+        response = await self.client.post(
+            endpoint='/selling/batch/delete-listing', 
+            data=data
+        )
         return BatchStatus.from_json(response.data)
 
     async def delete_listings_status(
             self,
             batch_id: str,
     ) -> BatchStatus:
-        response = await self.client.get(f'/batch/delete-listing/{batch_id}')
+        response = await self.client.get(
+            endpoint=f'/selling/batch/delete-listing/{batch_id}'
+        )
         return BatchStatus.from_json(response.data)
 
     async def delete_listings_items(
@@ -78,7 +88,7 @@ class Batch(StockXAPIBase):
     ) -> list[BatchDeleteResult]:
         params = {'status': status}
         response = await self.client.get(
-            f'/batch/delete-listing/{batch_id}/items',
+            endpoint=f'/selling/batch/delete-listing/{batch_id}/items',
             params=params,
         )
         items = response.data.get('items', [])
@@ -96,14 +106,20 @@ class Batch(StockXAPIBase):
             items: Iterable[BatchUpdateInput],
     ) -> BatchStatus:
         data = {'items': [item.to_json() for item in items]}
-        response = await self.client.post('/batch/update-listing', data=data)
+        print(data)
+        response = await self.client.post(
+            endpoint='/selling/batch/update-listing', 
+            data=data
+        )
         return BatchStatus.from_json(response.data)
 
     async def update_listings_status(
             self,
             batch_id: str,
     ) -> BatchStatus:
-        response = await self.client.get(f'/batch/update-listing/{batch_id}')
+        response = await self.client.get(
+            endpoint=f'/selling/batch/update-listing/{batch_id}'
+        )
         return BatchStatus.from_json(response.data)
 
     async def update_listings_items(
@@ -114,7 +130,7 @@ class Batch(StockXAPIBase):
     ) -> list[BatchUpdateResult]:
         params = {'status': status}
         response = await self.client.get(
-            f'/batch/update-listing/{batch_id}/items',
+            endpoint=f'/selling/batch/update-listing/{batch_id}/items',
             params=params,
         )
         items = response.data.get('items', [])
@@ -142,11 +158,12 @@ async def batch_completed(
 
         for batch_id in pending_batch_ids:
             status = await batch_status_coro(batch_id)
-            if status.item_statuses.queued == 0:
-                completed_batch_ids.update(batch_id)
+            if status.item_statuses.completed == status.total_items:
+                completed_batch_ids.add(batch_id)
 
         pending_batch_ids.difference_update(completed_batch_ids)
         if len(pending_batch_ids) == 0:
+            print('COMPLETED!!!!!!')
             return
         
         waited += sleep

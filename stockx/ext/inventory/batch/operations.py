@@ -103,6 +103,8 @@ async def update_listings(
         batch_status = await stockx.batch.update_listings(inputs)
         batch_ids.append(batch_status.batch_id)
 
+    print(f'{batch_ids=}')
+
     results = await _batch_results(stockx, batch_ids, update_listings, 60)
 
     return UpdateResult.from_batch_update(items, results)
