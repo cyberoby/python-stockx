@@ -29,26 +29,32 @@ async def main():
         refresh_token=REFRESH_TOKEN
     )
     
-    async with StockX(client) as stockx:
-        async with Inventory(stockx) as inventory:
-            items = await (
-                inventory.items().
-                filter(lambda item: 'DA8857-001' in item.style_id)
-                .all()
-            )
-            item = items[0]
-            print(item.style_id)
-            print(item.name)
-            print(item.size)
+    # async with StockX(client) as stockx:
+    #     async with Inventory(stockx) as inventory:
+    #         items = await (
+    #             inventory.items().
+    #             filter(lambda item: 'DA8857-001' in item.style_id)
+    #             .all()
+    #         )
+    #         item = items[0]
+    #         print(item.style_id)
+    #         print(item.name)
+    #         print(item.size)
+# 
+# 
+    #     batch_id = 'af6747c1-60ed-4074-a3c6-7b4a17411229'
+    #     status = await stockx.batch.delete_listings_status(batch_id)
+    #     items = await stockx.batch.delete_listings_items(batch_id)
+    #     print(status)
+    #     print('-------')
+    #     for item in items:
+    #         print(item)
 
-
-        batch_id = 'af6747c1-60ed-4074-a3c6-7b4a17411229'
-        status = await stockx.batch.delete_listings_status(batch_id)
-        items = await stockx.batch.delete_listings_items(batch_id)
-        print(status)
-        print('-------')
-        for item in items:
-            print(item)
+    from stockx.exceptions import StockXNotInitialized
+    try:
+       raise StockXNotInitialized
+    except StockXNotInitialized as e:
+        print(e.__str__())
 
         
 

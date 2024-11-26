@@ -16,7 +16,7 @@ from .inputs import (
 from .results import UpdateResult
 from ..item import Item, ListedItem
 from ....api import StockX, Batch
-from ....exceptions import BatchTimeOutError
+from ....exceptions import StockXBatchTimeout
 from ....models import BatchCreateInput
 
 
@@ -71,7 +71,7 @@ async def _create_listings(
         inputs_factory: Callable[..., Iterable[Iterable[BatchCreateInput]]],
 ) -> Iterator[UpdateResult]:
     batch_ids = []
-    for inputs in inputs_factory(items, 'EUR', 500):
+    for inputs in inputs_factory(items, 'EUR', 100):
         batch_status = await stockx.batch.create_listings(inputs)
         batch_ids.append(batch_status.batch_id)
 
@@ -99,7 +99,7 @@ async def update_listings(
         items: Iterable[ListedItem]
 ) -> Iterator[UpdateResult]:
     batch_ids = []
-    for inputs in update_listings_inputs(items, 'EUR', 500):
+    for inputs in update_listings_inputs(items, 'EUR', 100):
         batch_status = await stockx.batch.update_listings(inputs)
         batch_ids.append(batch_status.batch_id)
 
@@ -115,7 +115,7 @@ async def delete_listings(
         listing_ids: Iterable[str]
 ) -> UpdateResult:
     batch_ids = []
-    for inputs in delete_listings_inputs(listing_ids, 500):
+    for inputs in delete_listings_inputs(listing_ids, 100):
         batch_status = await stockx.batch.delete_listings(inputs)
         batch_ids.append(batch_status.batch_id)
 
@@ -138,7 +138,7 @@ async def _batch_results(stockx, batch_ids, func, timeout):
 
     try:
         await batch_completed(batch_ids, timeout)
-    except BatchTimeOutError:
+    except StockXBatchTimeout as err:
         pass
 
     return [

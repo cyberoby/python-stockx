@@ -1,10 +1,11 @@
 import aiohttp
 import asyncio
 
-from ...exceptions import StockXAPIException
+from ...exceptions import (
+    StockXNotInitialized,
+    stockx_request_error,
+)
 from ...models import Response
-
-from dotenv import load_dotenv
 
 
 GRANT_TYPE = 'refresh_token'
@@ -68,7 +69,7 @@ class StockXAPIClient:
             data: dict = None
     ) -> Response:
         if not self._initialized:
-            raise StockXAPIException('Client must be initialized before making requests.')
+            raise StockXNotInitialized()
         
         if params:
             params = {k: v for k, v in params.items() if v is not None}
@@ -90,10 +91,13 @@ class StockXAPIClient:
                         message=response.reason, 
                         data=data
                     )
-                raise Exception(f'{data=} {response.reason=} {response.status=}') # TODO: should include response object in the exception?
+                raise stockx_request_error(
+                    message=data.get('errorMessage', None), 
+                    status_code=response.status
+                )
         except aiohttp.ClientError as e:
-            raise StockXAPIException('Request failed') from e # TODO custom exceptions
-        
+            raise stockx_request_error('Request failed.') from e 
+                
     async def _refresh_session(self) -> None:
         while True:
             if self._session: 

@@ -5,7 +5,7 @@ from .catalog import Catalog
 from .client import StockXAPIClient
 from .listings import Listings
 from .orders import Orders
-from ..exceptions import StockXAuthError
+from ..exceptions import StockXNotInitialized
 
 
 class StockX:
@@ -74,7 +74,7 @@ class StockX:
         try:
             return getattr(self, f'_{api}')
         except AttributeError:
-            raise StockXAuthError(
+            raise StockXNotInitialized(
                 f'{self.__class__.__name__} is not logged in. '
                 f'Unable to access {api}.'
             )

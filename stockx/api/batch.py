@@ -6,7 +6,7 @@ from collections.abc import (
 )
 
 from .base import StockXAPIBase
-from ..exceptions import BatchTimeOutError
+from ..exceptions import StockXBatchTimeout
 from ..models import (
     BatchStatus,
     BatchCreateResult,
@@ -171,4 +171,8 @@ async def batch_completed(
         waited += sleep
         sleep = min(sleep * 2, timeout - waited)
     else:
-        raise BatchTimeOutError # TODO: add report on completed items??
+        raise StockXBatchTimeout(
+            message='Batch operation timed out.', 
+            batch_ids=pending_batch_ids
+        )
+

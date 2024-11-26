@@ -109,7 +109,7 @@ class Inventory:
                 self.payment_fee = detail.payout.payment_fee
                 return
         
-        raise RuntimeError('Unable to load fees. Level 1 fees applied.')
+        raise RuntimeError('Unable to load fees. Default fees applied.')
     
     def items(self) -> ItemsQuery:
         return create_items_query(self)
@@ -241,13 +241,12 @@ class Inventory:
             new_price: Amount,
             condition: Condition = True,
     ):
-        items_to_update = [
-            item for item in items 
-            if await computed_value(item, condition)
-        ]
+        items_to_update = []
 
-        for item in items_to_update:
-            item.price = await computed_value(item, new_price)
+        for item in items: 
+            if await computed_value(item, condition):
+                item.price = await computed_value(item, new_price)
+                items_to_update.append(item)
 
         await update_listings(self.stockx, items_to_update)
     
