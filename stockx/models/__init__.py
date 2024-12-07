@@ -1,4 +1,4 @@
-from .base import StockXBaseModel, Response
+from .base import StockXBaseModel
 from .batch import (
     BatchStatus,
     BatchItemStatuses,
@@ -18,6 +18,7 @@ from .products import (
     VariantShort,
     MarketData,
 )
+from .response import Response
 from .sales import (
     Shipment,
     AuthenticationDetails,

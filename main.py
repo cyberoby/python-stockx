@@ -50,11 +50,6 @@ async def main():
     #     for item in items:
     #         print(item)
 
-    from stockx.exceptions import StockXNotInitialized
-    try:
-       raise StockXNotInitialized
-    except StockXNotInitialized as e:
-        print(e.__str__())
 
         
 

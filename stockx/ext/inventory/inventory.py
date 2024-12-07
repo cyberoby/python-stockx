@@ -13,7 +13,7 @@ from .batch.operations import (
     update_listings, 
     update_quantity,
 )
-from .item import ListedItem
+from .item import Item, ListedItem
 from .market import create_item_market_data
 from .query import create_items_query
 from ..mock import mock_listing
@@ -82,7 +82,7 @@ class Inventory:
     async def __aexit__(self, exc_type, exc_value, traceback):
         results = await self.update()
         for result in results:
-            print(result)
+            print(result) # TODO: remove later
         # TODO: return True and suppress exc?
 
     async def load(self) -> None:
@@ -116,16 +116,15 @@ class Inventory:
     
     async def get_item_market_data(
             self, 
-            item: ListedItem | ListedItem
+            item: Item | ListedItem
     ) -> ItemMarketData:
         market_data = await self.stockx.catalog.get_product_market_data(
             product_id=item.product_id, 
             currency_code=self.currency
         )
 
-        variant_market_data_set = set(market_data)
         variant_market_data = next(
-            data for data in variant_market_data_set 
+            data for data in market_data 
             if data.variant_id == item.variant_id
         )
         
@@ -155,7 +154,7 @@ class Inventory:
 
     async def update(self) -> Iterator[UpdateResult]:
         quantity_results, price_results = [], []
-        
+
         if self._quantity_updates:
             for item in self._quantity_updates:
                 print(f'{item.name=}')

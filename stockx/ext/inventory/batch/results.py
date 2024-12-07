@@ -7,6 +7,7 @@ from itertools import chain, groupby
 from typing import TypeAlias
 
 from ..item import Item, ListedItem
+from ....format import pretty_str
 from ....models import (
     BatchCreateResult,
     BatchUpdateResult,
@@ -17,6 +18,7 @@ from ....models import (
 BatchResult: TypeAlias = BatchCreateResult | BatchDeleteResult | BatchUpdateResult
 
 
+@pretty_str
 @dataclass(slots=True, frozen=True)
 class ErrorDetail:
     message: str
@@ -47,6 +49,7 @@ class ErrorDetail:
             yield cls(message, occurrences)
 
 
+@pretty_str
 @dataclass(slots=True, frozen=True)
 class UpdateResult:
     item: Item | ListedItem | None = None

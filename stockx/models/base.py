@@ -1,40 +1,30 @@
 from __future__ import annotations
-
-from collections.abc import Iterable
-from dataclasses import (
-    Field,
-    dataclass,
-    field,
-    fields,
-)
+from dataclasses import dataclass, field
 from datetime import datetime
 from inspect import get_annotations
 from types import UnionType
-from typing import ( 
-    Any,
-    get_args, 
-    get_origin, 
-)
+from typing import Any, get_args, get_origin
+
+from ..format import pretty_str
 
 
-@dataclass(frozen=True, slots=True)
-class Response: 
-    status_code: int
-    message: str = '', 
-    data: dict[str, Any] | list[dict[str, Any]] = field(default_factory=list)
-
-
+@pretty_str
 @dataclass(frozen=True, slots=True)
 class StockXBaseModel:
-
+    """Base class for all StockX models."""
+    
     @classmethod
     def from_json(cls, json: dict[str, Any]) -> StockXBaseModel:
+        """Create a new instance from a JSON."""
+        # Get the kwargs present in the json and the class
         matching_kwargs = {
             key: val for key, val in _camel_to_snake(json).items() 
             if key in cls.__match_args__
         }
-        
+
         annotations = cls.annotations()
+
+        # Convert the values to the hinted type
         kwargs = {
             key: _convert(val, type_hint=annotations[key])
             for key, val in matching_kwargs.items()
@@ -44,6 +34,7 @@ class StockXBaseModel:
     
     @classmethod
     def annotations(cls) -> dict[str, Any]:
+        """Get the annotations for the class and all superclasses."""
         this_annotations = get_annotations(cls, eval_str=True)
 
         super_annotations = {}
@@ -53,32 +44,6 @@ class StockXBaseModel:
                 super_annotations = super_cls.annotations()
 
         return {**super_annotations, **this_annotations}
-
-    
-    def __str__(self, level: int = 0) -> str:
-        indent = '  ' * level
-        class_name = self.__class__.__name__
-
-        def format(value, level):
-            if isinstance(value, StockXBaseModel):
-                return f'\n{value.__str__(level + 1)}'
-            elif (
-                isinstance(value, Iterable) 
-                and not isinstance(value, (str, bytes, bytearray))
-            ):
-                return f''.join(format(item, level + 1) for item in value)
-            else:
-                return str(value)
-        
-        def value(field: Field):
-            return getattr(self, field.name)
-
-        attributes = '\n'.join(
-            f'{indent}  {field.name}: {format(value(field), level + 1)}'
-            for field in fields(self)
-        )
-
-        return f'{indent}{class_name}:\n{attributes}'
 
 
 def _camel_to_snake(json: dict[str, Any]) -> dict[str, Any]:
@@ -97,15 +62,18 @@ def _convert(value, type_hint):
         return datetime.fromisoformat(value)
     
     elif get_origin(type_hint) is list:
+        # Convert each value in the list to the nested type
         nested_type_hint = get_args(type_hint)[0]
         return [_convert(v, nested_type_hint) for v in value]
     
     elif get_origin(type_hint) is UnionType:
+        # Manage optional types (e.g. Payout | None)
         optional_type, none_type = get_args(type_hint)
         if none_type is type(None):
             return _convert(value, optional_type)
         
     elif issubclass(type_hint, StockXBaseModel):
+        # Conver the nested JSON to the type hinted model
         return type_hint.from_json(value)
     
     else:
