@@ -155,13 +155,14 @@ class Inventory:
 
     async def update(self) -> Iterator[UpdateResult]:
         quantity_results, price_results = [], []
+        
         if self._quantity_updates:
             for item in self._quantity_updates:
                 print(f'{item.name=}')
                 print(f'{item.size=}')
                 print(f'{item.quantity=}')
                 print(f'{item.quantity_to_sync()=}')
-                print(f'{item.payout()=}')
+                print(f'{item.payout()=}') # TODO: remove later
             quantity_results = await update_quantity(
                 stockx=self.stockx, 
                 items=self._quantity_updates
@@ -196,7 +197,7 @@ class Inventory:
             beat_by: Amount = 1,
             percentage: bool = False,
             condition: Condition = True,
-    ):
+    ) -> Iterator[UpdateResult]:
         return await self._beat_market_value(
             items=items, 
             get_market_value=lambda m: m.lowest_ask, 
@@ -211,7 +212,7 @@ class Inventory:
             beat_by: Amount = 0,
             percentage: bool = False,
             condition: Condition = True,
-    ):
+    ) -> Iterator[UpdateResult]:
         return await self._beat_market_value(
             items=items, 
             get_market_value=lambda m: m.sell_faster, 
@@ -226,7 +227,7 @@ class Inventory:
             beat_by: Amount = 0,
             percentage: bool = False,
             condition: Condition = True,
-    ):
+    ) -> Iterator[UpdateResult]:
         return await self._beat_market_value(
             items=items, 
             get_market_value=lambda m: m.earn_more, 
@@ -240,17 +241,20 @@ class Inventory:
             items: Iterable[ListedItem],
             new_price: Amount,
             condition: Condition = True,
-    ):
+    ) -> Iterator[UpdateResult]:
         items_to_update = []
 
         for item in items: 
             if await computed_value(item, condition):
+                # Change item's price if condition is met
                 item.price = await computed_value(item, new_price)
                 items_to_update.append(item)
 
-        await update_listings(self.stockx, items_to_update)
-    
+        # Avoid unnecessary updates when calling Inventory.update()
         self._price_updates.difference_update(items_to_update)
+
+        # Sync changes to StockX
+        return await update_listings(self.stockx, items_to_update)
     
     async def _beat_market_value(
             self,
@@ -259,8 +263,9 @@ class Inventory:
             beat_by: Amount,
             percentage: bool,
             condition: Condition,
-    ):
-        async def new_price(item):
+    ) -> Iterator[UpdateResult]:
+        # Define a new price function depending on market data
+        async def new_price(item: ListedItem) -> float:
             change = await computed_value(item, beat_by)
             
             market_data = await self.get_item_market_data(item)
@@ -269,10 +274,11 @@ class Inventory:
             if not market_value:
                 pass # TODO handle null cases
 
-            amount = market_value.amount
-
-            return amount * (1 - change) if percentage else amount - change
-        
+            if percentage:  
+                return market_value.amount * (1 - change)
+            else:
+                return market_value.amount - change
+            
         return await self.change_price(items, new_price, condition)
         
     

@@ -33,7 +33,7 @@ class Filter(Generic[T]):
             self.allowed_values.update(values)
 
     def match(self, obj: T) -> bool:
-        if not self.allowed_values:
+        if self.empty():
             return True
         value = self.extractor(obj)
         return self.condition(value, self.allowed_values)

@@ -3,10 +3,12 @@ from __future__ import annotations
 from collections.abc import AsyncIterable, Iterable
 from typing import TYPE_CHECKING
 
+from ...ext import search
 from ...models import Listing
 
 if TYPE_CHECKING:
     from .inventory import Inventory
+    from ...api import StockX
 
 
 class Item:
@@ -24,6 +26,36 @@ class Item:
         self.variant_id = variant_id
         self.price = price
         self.quantity = quantity
+
+    @classmethod
+    async def from_sku_size(
+            cls,
+            stockx: StockX,
+            sku: str,
+            size: str,
+            price: float,
+            quantity: int = 1
+    ) -> Item | None:
+        product = await search.product_by_sku(stockx, sku)
+
+        if not product:
+            return None
+        
+        variants = await stockx.catalog.get_all_product_variants(product.id)
+        variant = next(
+            (variant for variant in variants if variant.variant_value == size),
+            None
+        )
+
+        if not variant:
+            return None
+        
+        return cls(
+            product_id=product.id,
+            variant_id=variant.id,
+            price=price,
+            quantity=quantity
+        )
 
     @property
     def price(self) -> float:
