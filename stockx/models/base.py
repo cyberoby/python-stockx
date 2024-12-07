@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import (
     Field,
-    dataclass, 
+    dataclass,
     field,
     fields,
 )
@@ -62,9 +62,13 @@ class StockXBaseModel:
         def format(value, level):
             if isinstance(value, StockXBaseModel):
                 return f'\n{value.__str__(level + 1)}'
-            elif isinstance(value, Iterable) and not isinstance(value, str):
+            elif (
+                isinstance(value, Iterable) 
+                and not isinstance(value, (str, bytes, bytearray))
+            ):
                 return f''.join(format(item, level + 1) for item in value)
-            return str(value)
+            else:
+                return str(value)
         
         def value(field: Field):
             return getattr(self, field.name)
