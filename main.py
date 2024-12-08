@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from stockx import StockX, StockXAPIClient
 from stockx.ext import search, mock_listing
 from stockx.ext.inventory import Inventory
-
+from stockx.cache import cache_by
 
 HOSTNAME = 'api.stockx.com'
 VERSION = 'v2'
@@ -29,7 +29,14 @@ async def main():
         refresh_token=REFRESH_TOKEN
     )
     
-    # async with StockX(client) as stockx:
+    async with StockX(client) as stockx:
+        search_product_by_sku = cache_by('sku')(search.product_by_sku)
+        # search_product_by_sku = search.product_by_sku
+        for _ in range(10):
+            af1_white = await search_product_by_sku(stockx, 'CW2288-111')
+            print(af1_white)
+
+
     #     async with Inventory(stockx) as inventory:
     #         items = await (
     #             inventory.items().
@@ -50,8 +57,9 @@ async def main():
     #     for item in items:
     #         print(item)
 
+    
 
-        
+
 
 if __name__ == '__main__':
     asyncio.run(main())

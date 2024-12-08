@@ -4,7 +4,6 @@ from collections.abc import Iterable, Iterator
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from itertools import chain, groupby
-from typing import TypeAlias
 
 from ..item import Item, ListedItem
 from ....format import pretty_str
@@ -15,7 +14,7 @@ from ....models import (
 )
 
 
-BatchResult: TypeAlias = BatchCreateResult | BatchDeleteResult | BatchUpdateResult
+BatchResult = BatchCreateResult | BatchDeleteResult | BatchUpdateResult
 
 
 @pretty_str

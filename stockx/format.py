@@ -1,5 +1,9 @@
 from collections.abc import Iterable
-from dataclasses import Field, fields, is_dataclass
+from dataclasses import (
+    Field, 
+    fields, 
+    is_dataclass,
+)
 from datetime import datetime
 
 
@@ -19,7 +23,7 @@ def iso_date(datetime: datetime | None) -> str | None:
 
 def pretty_str(cls: type) -> type:
     """Decorator that adds pretty-printing functionality to a dataclass."""
-    
+
     if not is_dataclass(cls):
         raise ValueError(f'{cls} is not a dataclass.')
 
@@ -39,8 +43,8 @@ def pretty_str(cls: type) -> type:
                 isinstance(value, Iterable) 
                 and not isinstance(value, (str, bytes, bytearray))
             ):
-                # Increase the indentation level and join the items vertically
-                return f''.join(format(item, level + 1) for item in value)
+                # Increase the indentation level and join the items
+                return f', '.join(format(item, level + 1) for item in value)
             else:
                 # Return the value as a string
                 return str(value)

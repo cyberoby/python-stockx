@@ -1,6 +1,7 @@
 from typing import AsyncIterator
 
 from .base import StockXAPIBase
+from ..cache import cache_by
 from ..models import (
     Product, 
     Variant, 
@@ -9,7 +10,8 @@ from ..models import (
 
 
 class Catalog(StockXAPIBase):
-    
+
+    @cache_by('product_id')
     async def get_product(
             self, 
             product_id: str
@@ -17,6 +19,7 @@ class Catalog(StockXAPIBase):
         response = await self.client.get(f'/catalog/products/{product_id}')
         return Product.from_json(response.data)
     
+    @cache_by('product_id')
     async def get_all_product_variants(
             self, 
             product_id: str
@@ -26,6 +29,7 @@ class Catalog(StockXAPIBase):
         )
         return [Variant.from_json(item) for item in response.data]
     
+    @cache_by('product_id', 'variant_id')
     async def get_product_variant(
             self, 
             product_id: str, 
@@ -36,6 +40,7 @@ class Catalog(StockXAPIBase):
         )
         return Variant.from_json(response.data)
     
+    @cache_by('product_id', 'variant_id', 'currency_code', ttl=30)
     async def get_variant_market_data(
             self, 
             product_id: str, 
@@ -49,6 +54,7 @@ class Catalog(StockXAPIBase):
         )
         return MarketData.from_json(response.data)
     
+    @cache_by('product_id', 'currency_code', ttl=30)
     async def get_product_market_data(
             self, 
             product_id: str, 

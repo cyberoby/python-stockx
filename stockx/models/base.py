@@ -1,9 +1,13 @@
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from inspect import get_annotations
 from types import UnionType
-from typing import Any, get_args, get_origin
+from typing import (
+    Any, 
+    get_args, 
+    get_origin,
+)
 
 from ..format import pretty_str
 

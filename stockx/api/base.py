@@ -82,7 +82,7 @@ class StockXAPIBase:
 
 
 def check(count: int, limit: int) -> bool:
-    return count < limit if limit else True
+    return count < limit if limit is not None else True
 
 
 
