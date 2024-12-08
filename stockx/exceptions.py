@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from typing import Literal
 
 
 class StockXException(Exception):
@@ -64,7 +65,7 @@ class StockXBadRequest(StockXRequestError):
     def __init__(
             self, 
             message: str = 'Bad request.', 
-            status_code: int = 400
+            status_code: Literal[400] = 400
     ) -> None:
         super().__init__(message, status_code)
 
@@ -74,7 +75,7 @@ class StockXUnauthorized(StockXRequestError):
     def __init__(
             self, 
             message: str = 'Unauthorized access.',
-            status_code: int = 401
+            status_code: Literal[401] = 401
     ) -> None:
         super().__init__(message, status_code)
 
@@ -84,7 +85,7 @@ class StockXForbidden(StockXRequestError):
     def __init__(
             self, 
             message: str = 'Forbidden.',
-            status_code: int = 403
+            status_code: Literal[403] = 403
     ) -> None:
         super().__init__(message, status_code)
 
@@ -94,7 +95,7 @@ class StockXNotFound(StockXRequestError):
     def __init__(
             self, 
             message: str = 'Resource not found.', 
-            status_code: int = 404
+            status_code: Literal[404] = 404
     ) -> None:
         super().__init__(message, status_code)
 
@@ -104,7 +105,7 @@ class StockXRateLimited(StockXRequestError):
     def __init__(
             self, 
             message: str = "You're going too fast.", 
-            status_code: int = 429
+            status_code: Literal[429] = 429
     ) -> None:
         super().__init__(message, status_code)
 
@@ -114,12 +115,15 @@ class StockXInternalServerError(StockXRequestError):
     def __init__(
             self, 
             message: str = 'Internal server error.', 
-            status_code: int = 500
+            status_code: Literal[500] = 500
     ) -> None:
         super().__init__(message, status_code)
 
 
-def stockx_request_error(message, status_code = None):
+def stockx_request_error(
+        message: str, 
+        status_code: int | None = None
+) -> StockXRequestError:
     config = {
         400: StockXBadRequest,
         401: StockXUnauthorized,

@@ -9,7 +9,7 @@ __all__ = (
 )
 
 
-@cache_by('sku', maxsize=4096)
+@cache_by('sku')
 async def product_by_sku(stockx: StockX, sku: str) -> Product | None:
     async for product in stockx.catalog.search_catalog(
         query=sku,
@@ -22,7 +22,7 @@ async def product_by_sku(stockx: StockX, sku: str) -> Product | None:
         return None
 
 
-@cache_by('stockx_url', maxsize=4096)
+@cache_by('stockx_url')
 async def product_by_url(stockx: StockX, stockx_url: str) -> Product | None:
     async for product in stockx.catalog.search_catalog(
         query=stockx_url, 

@@ -30,11 +30,10 @@ async def main():
     )
     
     async with StockX(client) as stockx:
-        search_product_by_sku = cache_by('sku')(search.product_by_sku)
-        # search_product_by_sku = search.product_by_sku
         for _ in range(10):
-            af1_white = await search_product_by_sku(stockx, 'CW2288-111')
+            af1_white = await search.product_by_sku(stockx, 'CW2288-111')
             print(af1_white)
+
 
 
     #     async with Inventory(stockx) as inventory:

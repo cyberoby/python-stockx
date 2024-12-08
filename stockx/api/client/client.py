@@ -1,6 +1,10 @@
+from __future__ import annotations
 import aiohttp
 import asyncio
+from collections.abc import Mapping, Sequence
 
+from .retry import retry
+from .throttle import throttle
 from ...exceptions import (
     StockXNotInitialized,
     stockx_request_error,
@@ -10,11 +14,17 @@ from ...models import Response
 
 GRANT_TYPE = 'refresh_token'
 REFRESH_URL = 'https://accounts.stockx.com/oauth/token'
-REFRESH_TIME = 3600
+REFRESH_TOKEN_SLEEP = 3600
 AUDIENCE = 'gateway.stockx.com'
 
 
+JSONPrimitive = str | int | float | bool | None
+Params = Mapping[str, JSONPrimitive]
+type JSON = Mapping[str, JSONPrimitive | Sequence[JSONPrimitive] | JSON]
+
+
 class StockXAPIClient:
+    """Interface for making HTTP requests to StockX API."""
     
     def __init__(
             self,
@@ -23,7 +33,7 @@ class StockXAPIClient:
             x_api_key: str,
             client_id: str,
             client_secret: str,
-            refresh_token: str, # TODO: later implement token as well or authentication
+            refresh_token: str,
     ) -> None:
         self.url = f'https://{hostname}/{version}'
         self.x_api_key = x_api_key
@@ -31,44 +41,54 @@ class StockXAPIClient:
         self.client_secret = client_secret
         self.refresh_token = refresh_token
         
-        self._initialized: bool = False
-        self._session: aiohttp.ClientSession = None
-        self._refresh_task: asyncio.Task = None
+        self._auth_headers: dict[str, str] | None = None
+        self._refresh_task: asyncio.Task | None = None
+        self._session: aiohttp.ClientSession | None = None
 
     async def initialize(self) -> None:
-        refresh = self._refresh_session()
-        self._refresh_task = asyncio.create_task(refresh)
-        await asyncio.sleep(2)
+        """Initialize and login client."""
+        if not self._session and not self._refresh_task:
+            self._session = aiohttp.ClientSession()
+            self._refresh_task = asyncio.create_task(self._refresh_token())
+            await asyncio.sleep(1)
 
     async def close(self) -> None:
+        """Close client session."""
         if self._session:
             await self._session.close()
         if self._refresh_task:
             self._refresh_task.cancel()
         
-    async def get(self, endpoint: str, params: dict = None) -> Response:
+    async def get(self, endpoint: str, params: Params | None = None) -> Response:
+        """Perform `GET` request."""
         return await self._do('GET', endpoint, params=params)
     
-    async def put(self, endpoint: str, data: dict = None) -> Response:
+    async def put(self, endpoint: str, data: JSON | None = None) -> Response:
+        """Perform `PUT` request."""
         return await self._do('PUT', endpoint, data=data)
     
-    async def post(self, endpoint: str, data: dict = None) -> Response:
+    async def post(self, endpoint: str, data: JSON | None = None) -> Response:
+        """Perform `POST` request."""
         return await self._do('POST', endpoint, data=data)
 
-    async def patch(self, endpoint: str, data: dict = None) -> Response:
+    async def patch(self, endpoint: str, data: JSON | None = None) -> Response:
+        """Perform `PATCH` request."""
         return await self._do('PATCH', endpoint, data=data)
     
     async def delete(self, endpoint: str) -> Response:
+        """Perform `DELETE` request."""
         return await self._do('DELETE', endpoint)
     
+    @throttle(seconds=3)
+    @retry(max_attempts=5, initial_delay=2, timeout=60)
     async def _do(
             self, 
             method: str,
             endpoint: str, 
-            params: dict = None,
-            data: dict = None
+            params: Params | None = None,
+            data: JSON | None = None
     ) -> Response:
-        if not self._initialized:
+        if not self._auth_headers:
             raise StockXNotInitialized()
         
         if params:
@@ -82,7 +102,8 @@ class StockXAPIClient:
                 method,
                 url,
                 params=params,
-                json=data
+                json=data,
+                headers=self._auth_headers
             ) as response:
                 data = await response.json()
                 if 299 >= response.status >= 200:
@@ -95,37 +116,33 @@ class StockXAPIClient:
                     message=data.get('errorMessage', None), 
                     status_code=response.status
                 )
+        except aiohttp.ClientResponseError as e:
+            raise stockx_request_error(e.message, e.status) from e
         except aiohttp.ClientError as e:
-            raise stockx_request_error('Request failed.') from e 
-                
-    async def _refresh_session(self) -> None:
+            raise stockx_request_error('Request failed.') from e
+            
+    async def _refresh_token(self) -> None:
         while True:
-            if self._session: 
-                await self._session.close() # TODO: don't close session, just change token
-            headers = await self._login()
-            self._session = aiohttp.ClientSession(headers=headers) 
-            self._initialized = True
-            await asyncio.sleep(REFRESH_TIME)
-
-    async def _login(self) -> dict:
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        refresh_data = {
-            'grant_type': GRANT_TYPE,
-            'client_id': self.client_id,
-            'client_secret': self.client_secret,
-            'audience': AUDIENCE,
-            'refresh_token': self.refresh_token
-        }
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                REFRESH_URL, headers=headers, data=refresh_data
+            headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+            auth_data = {
+                'grant_type': GRANT_TYPE,
+                'client_id': self.client_id,
+                'client_secret': self.client_secret,
+                'audience': AUDIENCE,
+                'refresh_token': self.refresh_token
+            }
+            async with self._session.post(
+                REFRESH_URL, headers=headers, data=auth_data
             ) as response:
                 payload = await response.json()
                 token = payload['access_token']
-                return {
+                self._auth_headers = {
                     'Authorization': f'Bearer {token}',
                     'x-api-key': self.x_api_key
                 }
+                
+            await asyncio.sleep(REFRESH_TOKEN_SLEEP)
+        
             
 
             
