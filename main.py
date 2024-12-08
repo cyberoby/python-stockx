@@ -30,9 +30,12 @@ async def main():
     )
     
     async with StockX(client) as stockx:
-        for _ in range(10):
-            af1_white = await search.product_by_sku(stockx, 'CW2288-111')
-            print(af1_white)
+        from stockx.models import Currency
+        currency = Currency('USD')
+        print(currency)
+        # for _ in range(10):
+        #     af1_white = await search.product_by_sku(stockx, 'CW2288-111')
+        #     print(af1_white)
 
 
 

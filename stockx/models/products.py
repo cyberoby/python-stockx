@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .base import StockXBaseModel
+from .currency import Currency
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,7 +68,7 @@ class VariantShort(StockXBaseModel):
 class MarketData(StockXBaseModel):
     product_id: str
     variant_id: str
-    currency_code: str
+    currency_code: Currency
     lowest_ask_amount: float | None = None
     highest_bid_amount: float | None = None
     sell_faster_amount: float | None = None

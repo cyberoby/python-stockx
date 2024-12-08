@@ -1,7 +1,6 @@
 from __future__ import annotations
 import aiohttp
 import asyncio
-from collections.abc import Mapping, Sequence
 
 from .retry import retry
 from .throttle import throttle
@@ -10,17 +9,12 @@ from ...exceptions import (
     stockx_request_error,
 )
 from ...models import Response
-
+from ...types import JSON, Params
 
 GRANT_TYPE = 'refresh_token'
 REFRESH_URL = 'https://accounts.stockx.com/oauth/token'
 REFRESH_TOKEN_SLEEP = 3600
 AUDIENCE = 'gateway.stockx.com'
-
-
-JSONPrimitive = str | int | float | bool | None
-Params = Mapping[str, JSONPrimitive]
-type JSON = Mapping[str, JSONPrimitive | Sequence[JSONPrimitive] | JSON]
 
 
 class StockXAPIClient:

@@ -1,9 +1,9 @@
+from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import AsyncIterator
 
 from .base import StockXAPIBase
 from ..format import iso_date
-from ..models import OrderDetail, Order
+from ..models import Order, OrderDetail
 
 
 class Orders(StockXAPIBase):
@@ -17,12 +17,12 @@ class Orders(StockXAPIBase):
 
     async def get_orders_history(
             self,
-            from_date: datetime = None,
-            to_date: datetime = None,
-            order_status: str = None,
-            product_id: str = None,
-            variant_id: str = None, 
-            limit: int = None, 
+            from_date: datetime | None = None,
+            to_date: datetime | None = None,
+            order_status: str | None = None,
+            product_id: str | None = None,
+            variant_id: str | None = None, 
+            limit: int | None = None, 
             page_size: int = 10
     ) -> AsyncIterator[Order]:
         params = {
@@ -43,11 +43,11 @@ class Orders(StockXAPIBase):
 
     async def get_active_orders(
             self,
-            order_status: str = None,
-            product_id: str = None,
-            variant_id: str = None,
-            sort_order: str = None, 
-            limit: int = None, 
+            order_status: str | None = None,
+            product_id: str | None = None,
+            variant_id: str | None = None,
+            sort_order: str | None = None, 
+            limit: int | None = None, 
             page_size: int = 10
     ) -> AsyncIterator[Order]:
         params = {

@@ -1,8 +1,10 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
 
 from .base import StockXBaseModel
+from .currency import Currency
 from .products import ProductShort, VariantShort
     
 
@@ -34,7 +36,7 @@ class Payout(StockXBaseModel):
     total_payout: float
     sale_price: float | None = None
     total_adjustments: float = 0
-    currency_code: str = ''
+    currency_code: Currency | None = None
     adjustments: list[Adjustments] = field(default_factory=list)
 
     @property
@@ -54,6 +56,25 @@ class Payout(StockXBaseModel):
         for fee in self.adjustments:
             if 'Shipping' in fee.adjustment_type:
                 return fee.amount
+            
+
+class OrderStatus(Enum):
+    CREATED = 'CREATED'
+    CCAUTHORIZATIONFAILED = 'CCAUTHORIZATIONFAILED'
+    SHIPPED = 'SHIPPED'
+    RECEIVED = 'RECEIVED'
+    AUTHENTICATING = 'AUTHENTICATING'
+    AUTHENTICATED = 'AUTHENTICATED'
+    PAYOUTPENDING = 'PAYOUTPENDING'
+    PAYOUTCOMPLETED = 'PAYOUTCOMPLETED'
+    SYSTEMFULFILLED = 'SYSTEMFULFILLED'
+    PAYOUTFAILED = 'PAYOUTFAILED'
+    SUSPENDED = 'SUSPENDED'
+    AUTHFAILED = 'AUTHFAILED'
+    DIDNOTSHIP = 'DIDNOTSHIP'
+    CANCELED = 'CANCELED'
+    COMPLETED = 'COMPLETED'
+    RETURNED = 'RETURNED'
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,10 +82,10 @@ class Order(StockXBaseModel):
     order_number: str
     listing_id: str
     amount: float
-    status: str
-    currency_code: str
+    status: OrderStatus
+    currency_code: Currency
     product: ProductShort
-    variant: VariantShort | None = None
+    variant: VariantShort
     authentication_details: AuthenticationDetails | None = None
     payout: Payout | None = None
     created_at: datetime | None = None
@@ -83,7 +104,7 @@ class OrderDetail(Order):
 @dataclass(frozen=True, slots=True)
 class OrderShort(StockXBaseModel):
     order_number: str
-    order_status: str = ''
+    order_status: OrderStatus | None = None
     order_created_at: datetime | None = None
 
     @property
@@ -91,12 +112,18 @@ class OrderShort(StockXBaseModel):
         return self.order_number
     
     @property
-    def status(self) -> str:
+    def status(self) -> OrderStatus | None:
         return self.order_status
     
     @property
     def created_at(self) -> datetime | None:
         return self.order_created_at
+    
+
+class OperationStatus(Enum):
+    PENDING = 'PENDING'
+    SUCCEEDED = 'SUCCEEDED'
+    FAILED = 'FAILED'
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,7 +131,7 @@ class Operation(StockXBaseModel):
     listing_id: str = ''
     operation_id: str = ''
     operation_type: str = ''
-    operation_status: str = ''
+    operation_status: OperationStatus | None = None
     operation_initiated_by: str = ''
     operation_initiated_via: str = ''
     created_at: datetime | None = None
@@ -115,19 +142,28 @@ class Operation(StockXBaseModel):
         return self.operation_id
     
     @property
-    def status(self) -> str:
+    def status(self) -> OperationStatus | None:
         return self.operation_status
-    # TODO: changes, operation_url?
+    
+    # TODO: changes
+
+
+class ListingStatus(Enum):
+    ACTIVE = 'ACTIVE'
+    INACTIVE = 'INACTIVE'
+    CANCELED = 'CANCELED'
+    MATCHED = 'MATCHED'
+    COMPLETED = 'COMPLETED'
 
 
 @dataclass(frozen=True, slots=True)
 class Listing(StockXBaseModel):
     listing_id: str
-    status: str
+    status: ListingStatus
     amount: float
-    currency_code: str
+    currency_code: Currency
     product: ProductShort
-    variant: VariantShort | None = None # TODO: probably required
+    variant: VariantShort
     inventory_type: str = ''
     order: OrderShort | None = None
     authentication_details: AuthenticationDetails | None = None

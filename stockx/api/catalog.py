@@ -1,8 +1,9 @@
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 from .base import StockXAPIBase
 from ..cache import cache_by
 from ..models import (
+    Currency,
     Product, 
     Variant, 
     MarketData,
@@ -40,27 +41,27 @@ class Catalog(StockXAPIBase):
         )
         return Variant.from_json(response.data)
     
-    @cache_by('product_id', 'variant_id', 'currency_code', ttl=30)
+    @cache_by('product_id', 'variant_id', 'currency', ttl=30)
     async def get_variant_market_data(
             self, 
             product_id: str, 
             variant_id: str, 
-            currency_code: str
+            currency: Currency
     ) -> MarketData:
-        params = {'currencyCode': currency_code}    
+        params = {'currencyCode': str(currency)}    
         response = await self.client.get(
             f'/catalog/products/{product_id}/variants/{variant_id}/market-data',
             params=params
         )
         return MarketData.from_json(response.data)
     
-    @cache_by('product_id', 'currency_code', ttl=30)
+    @cache_by('product_id', 'currency', ttl=30)
     async def get_product_market_data(
             self, 
             product_id: str, 
-            currency_code: str
+            currency: Currency
     ) -> list[MarketData]:
-        params = {'currencyCode': currency_code}    
+        params = {'currencyCode': str(currency)}    
         response = await self.client.get(
             f'/catalog/products/{product_id}/market-data', 
             params=params
@@ -70,7 +71,7 @@ class Catalog(StockXAPIBase):
     async def search_catalog(
             self, 
             query: str, 
-            limit: int = None, 
+            limit: int | None = None, 
             page_size: int = 10
     ) -> AsyncIterator[Product]:
         params = {'query': query}

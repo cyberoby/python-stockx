@@ -3,13 +3,13 @@ from datetime import datetime
 from itertools import batched
 
 from ..item import Item, ListedItem
-from ....models import BatchCreateInput, BatchUpdateInput
+from ....models import BatchCreateInput, BatchUpdateInput, Currency
 from ....processing import group_and_sum
 
 
 def create_listings_inputs(
         items: Iterable[Item], 
-        currency: str, 
+        currency: Currency, 
         batch_size: int
 ) -> Iterator[tuple[BatchCreateInput, ...]]:
     grouped_items = group_and_sum(
@@ -31,7 +31,7 @@ def create_listings_inputs(
 
 def sync_listings_inputs(
         items: Iterable[ListedItem], 
-        currency: str, 
+        currency: Currency, 
         batch_size: int
 ) -> Iterator[tuple[BatchCreateInput, ...]]:
     grouped_items = group_and_sum(
@@ -53,7 +53,7 @@ def sync_listings_inputs(
 
 def update_listings_inputs(
         items: Iterable[ListedItem], 
-        currency: str, 
+        currency: Currency, 
         batch_size: int
 ) -> Iterator[tuple[BatchUpdateInput, ...]]:
     inputs = [

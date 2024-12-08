@@ -9,9 +9,11 @@ from ..format import (
     iso_date,
 )
 from ..models import (
+    Currency,
     ListingDetail, 
     Listing, 
     Operation,
+    OperationStatus,
 )
 
 
@@ -26,13 +28,13 @@ class Listings(StockXAPIBase):
 
     async def get_all_listings(
             self,
-            product_ids: Iterable[str] = None,
-            variant_ids: Iterable[str] = None,
-            from_date: datetime = None,
-            to_date: datetime = None,
-            listing_statuses: Iterable[str] = None,
-            inventory_types: Iterable[str] = None,
-            limit: int = None,
+            product_ids: Iterable[str] | None = None,
+            variant_ids: Iterable[str] | None = None,
+            from_date: datetime | None = None,
+            to_date: datetime | None = None,
+            listing_statuses: Iterable[str] | None = None,
+            inventory_types: Iterable[str] | None = None,          
+            limit: int | None = None,  
             page_size: int = 10,
             oldest_first: bool = False,
     ) -> AsyncIterator[Listing]:
@@ -58,14 +60,14 @@ class Listings(StockXAPIBase):
             self,
             amount: float,
             variant_id: str,
-            currency_code: str = None,
-            expires_at: datetime = None,
-            active: bool = None
+            currency: Currency | None = None,
+            expires_at: datetime | None = None,
+            active: bool | None = None
     ) -> Operation:
         data = {
             'amount': f'{amount:.0f}',
             'variantId': variant_id,
-            'currencyCode': currency_code,
+            'currencyCode': str(currency),
             'expiresAt': iso(expires_at),
             'active': active,
         }
@@ -76,12 +78,12 @@ class Listings(StockXAPIBase):
             self, 
             listing_id: str,
             amount: float,   # TODO required???
-            currency_code: str = None,
-            expires_at: datetime = None
+            currency: Currency | None = None,
+            expires_at: datetime | None = None
     ) -> Operation:
         data = {
             'amount': f'{amount:.0f}',
-            'currencyCode': currency_code,
+            'currencyCode': str(currency),
             'expiresAt': iso(expires_at),
         }
         response = await self.client.put(
@@ -101,13 +103,13 @@ class Listings(StockXAPIBase):
     async def update_listing(
             self,
             listing_id: str,
-            amount: float = None,
-            currency_code: str = None,
-            expires_at: datetime = None,
+            amount: float | None = None,
+            currency: Currency | None = None,
+            expires_at: datetime | None = None,
     ) -> Operation:
         data = {
             'amount': f'{amount:.0f}',
-            'currencyCode': currency_code,
+            'currencyCode': str(currency),
             'expiresAt': iso(expires_at),
         }
         response = await self.client.patch(
@@ -150,15 +152,14 @@ class Listings(StockXAPIBase):
             self,
             operation: Operation
     ) -> bool:
-        while operation.status == 'PENDING':
-            await asyncio.sleep(1) # TODO: move rate limiting to client
+        while operation.status == OperationStatus.PENDING:
             operation = await self.get_listing_operation(
                 listing_id=operation.listing_id,
                 operation_id=operation.id
             )
         
-        if operation.status == 'FAILED':
-            return False # TODO: raise error instead?
+        if operation.status == OperationStatus.FAILED:
+            return False
         
         return True
 

@@ -21,7 +21,7 @@ class StockX:
 
     def __init__(self, client: StockXAPIClient) -> None:
         self.client = client
-        self._initialized = False
+        self._initialized: bool = False
 
     async def login(self) -> None:
         if self._initialized:

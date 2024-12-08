@@ -1,46 +1,32 @@
 from __future__ import annotations
 from collections.abc import (
-    Awaitable,
     Callable,
     Iterable, 
     Iterator,
 )
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING
 
 from .batch.operations import (
-    UpdateResult,
     publish_listings,
     update_listings, 
     update_quantity,
 )
+from .batch.results import UpdateResult
 from .item import Item, ListedItem
 from .market import create_item_market_data
 from .query import create_items_query
 from ..mock import mock_listing
 from ...api import StockX
+from ...models import Currency
+from ...types import ComputedValue, computed_value
 
 if TYPE_CHECKING:
     from .market import ItemMarketData, MarketValue
     from .query import ItemsQuery
 
 
-I = TypeVar('I')
-O = TypeVar('O')
-
-type ComputedValue[I, O] = O | Callable[[I], O] | Callable[[I], Awaitable[O]]
-
 Amount = ComputedValue[ListedItem, float]
 Condition = ComputedValue[ListedItem, bool]
-
-
-async def computed_value(input: I, value: ComputedValue[I, O]) -> O:
-    if callable(value):
-        try:
-            return await value(input)
-        except TypeError:
-                return value(input)
-    else:
-        return value
 
 
 class Inventory:
@@ -59,7 +45,7 @@ class Inventory:
     def __init__(
             self, 
             stockx: StockX, 
-            currency: str = 'EUR',  # TODO: enum?
+            currency: Currency = Currency.EUR,
             shipping_fee: float = 7.0,
             minimum_transaction_fee: float = 5.0,
             transaction_fee_percentage: float = 0.09,
@@ -81,8 +67,6 @@ class Inventory:
     
     async def __aexit__(self, exc_type, exc_value, traceback):
         results = await self.update()
-        for result in results:
-            print(result) # TODO: remove later
         # TODO: return True and suppress exc?
 
     async def load(self) -> None:
@@ -156,12 +140,6 @@ class Inventory:
         quantity_results, price_results = [], []
 
         if self._quantity_updates:
-            for item in self._quantity_updates:
-                print(f'{item.name=}')
-                print(f'{item.size=}')
-                print(f'{item.quantity=}')
-                print(f'{item.quantity_to_sync()=}')
-                print(f'{item.payout()=}') # TODO: remove later
             quantity_results = await update_quantity(
                 stockx=self.stockx, 
                 items=self._quantity_updates

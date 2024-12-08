@@ -2,8 +2,9 @@ from math import ceil
 from typing import AsyncIterator
 
 from .client import StockXAPIClient
+from ..types import JSON, Params
 
-# TODO: fix type hints
+
 class StockXAPIBase:
 
     def __init__(self, client: StockXAPIClient) -> None:
@@ -13,11 +14,11 @@ class StockXAPIBase:
             self, 
             endpoint: str,
             results_key: str,
-            params: dict = None, 
-            limit: int = None, 
+            params: Params | None = None, 
+            limit: int | None = None, 
             page_size: int = 10,
             reverse: bool = False,
-    ) -> AsyncIterator[dict]:
+    ) -> AsyncIterator[JSON]:
         params = params if params else {}
         params['pageSize'] = page_size
 
@@ -57,10 +58,10 @@ class StockXAPIBase:
             self, 
             endpoint: str,
             results_key: str,
-            params: dict = None, 
-            limit: int = None, 
+            params: Params | None = None, 
+            limit: int | None = None, 
             page_size: int = 10
-    ) -> AsyncIterator[dict]:
+    ) -> AsyncIterator[JSON]:
         params = params if params else {}
         params['pageSize'] = page_size
         count = 0
@@ -81,7 +82,7 @@ class StockXAPIBase:
             params['cursor'] = next_cursor
 
 
-def check(count: int, limit: int) -> bool:
+def check(count: int, limit: int | None) -> bool:
     return count < limit if limit is not None else True
 
 

@@ -1,9 +1,9 @@
 from collections.abc import Callable
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from typing import NamedTuple
 
-from ...format import pretty_str
-from ...models import MarketData
+from ...format import pretty_str    
+from ...models import Currency, MarketData
 
 
 class MarketValue(NamedTuple):
@@ -14,7 +14,7 @@ class MarketValue(NamedTuple):
 @pretty_str
 @dataclass(slots=True, frozen=True)
 class ItemMarketData:
-    currency: str
+    currency: Currency
     lowest_ask: MarketValue | None = None
     highest_bid: MarketValue | None = None
     earn_more: MarketValue | None = None
@@ -25,7 +25,7 @@ class ItemMarketData:
 def create_item_market_data(
         market_data: MarketData, 
         payout_calculator: Callable[[float], float],
-        currency: str,
+        currency: Currency,
 ) -> ItemMarketData:
     
     def market_value(amount):

@@ -120,17 +120,76 @@ class StockXInternalServerError(StockXRequestError):
         super().__init__(message, status_code)
 
 
+class StockXRequestTooLarge(StockXRequestError):
+    """Raised for HTTP 413 errors - request payload too large."""
+    def __init__(
+            self, 
+            message: str = 'Request payload too large.', 
+            status_code: Literal[413] = 413
+    ) -> None:
+        super().__init__(message, status_code)
+
+
+class StockXUnsupportedMediaType(StockXRequestError):
+    """Raised for HTTP 415 errors - unsupported media type."""
+    def __init__(
+            self, 
+            message: str = 'Unsupported media type.', 
+            status_code: Literal[415] = 415
+    ) -> None:
+        super().__init__(message, status_code)
+
+
+class StockXServiceUnavailable(StockXRequestError):
+    """Raised for HTTP 503 errors - service unavailable."""
+    def __init__(
+            self, 
+            message: str = 'Service temporarily unavailable.', 
+            status_code: Literal[503] = 503
+    ) -> None:
+        super().__init__(message, status_code)
+
+
+class StockXGatewayTimeout(StockXRequestError):
+    """Raised for HTTP 504 errors - gateway timeout."""
+    def __init__(
+            self, 
+            message: str = 'Gateway timeout.', 
+            status_code: Literal[504] = 504
+    ) -> None:
+        super().__init__(message, status_code)
+
+
 def stockx_request_error(
         message: str, 
         status_code: int | None = None
 ) -> StockXRequestError:
+    """
+    Create appropriate StockXRequestError subclass based on HTTP status code.
+
+    Parameters
+    ----------
+    message : str
+        Error message to include in the exception.
+    status_code : int | None
+        HTTP status code that triggered the error.
+
+    Returns
+    -------
+    StockXRequestError
+        Appropriate exception subclass for the status code.
+    """
     config = {
         400: StockXBadRequest,
         401: StockXUnauthorized,
         403: StockXForbidden,
         404: StockXNotFound,
+        413: StockXRequestTooLarge,
+        415: StockXUnsupportedMediaType,
         429: StockXRateLimited,
         500: StockXInternalServerError,
+        503: StockXServiceUnavailable,
+        504: StockXGatewayTimeout,
     }
     try:
         return config[status_code](message, status_code)

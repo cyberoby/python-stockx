@@ -2,14 +2,14 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from ..api import StockX 
-from ..models import ListingDetail
+from ..models import Currency, ListingDetail
 
 
 @asynccontextmanager
 async def mock_listing(
         stockx: StockX, 
         amount: float = 1000,
-        currency_code: str = 'EUR',
+        currency: Currency = Currency.EUR,
 ) -> AsyncIterator[ListingDetail]:
 
     product = await anext(stockx.catalog.search_catalog('adidas'))
@@ -17,7 +17,7 @@ async def mock_listing(
     create = await stockx.listings.create_listing(
         amount=amount,
         variant_id=variants[0].id,
-        currency_code=currency_code,
+        currency=currency,
         active=True,
     )
     if not await stockx.listings.operation_succeeded(create):

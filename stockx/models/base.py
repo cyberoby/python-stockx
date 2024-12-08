@@ -10,6 +10,7 @@ from typing import (
 )
 
 from ..format import pretty_str
+from ..types import JSON
 
 
 @pretty_str
@@ -18,7 +19,7 @@ class StockXBaseModel:
     """Base class for all StockX models."""
     
     @classmethod
-    def from_json(cls, json: dict[str, Any]) -> StockXBaseModel:
+    def from_json(cls, json: JSON) -> StockXBaseModel:
         """Create a new instance from a JSON."""
         # Get the kwargs present in the json and the class
         matching_kwargs = {
@@ -50,7 +51,7 @@ class StockXBaseModel:
         return {**super_annotations, **this_annotations}
 
 
-def _camel_to_snake(json: dict[str, Any]) -> dict[str, Any]:
+def _camel_to_snake(json: JSON) -> JSON:
 
     def snake(key: str) -> str:
         return ''.join(f'_{c.lower()}' if c.isupper() else c for c in key)

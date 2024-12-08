@@ -1,33 +1,36 @@
 from .base import StockXBaseModel
 from .batch import (
-    BatchStatus,
-    BatchItemStatuses,
-    BatchCreateResult,
-    BatchDeleteResult,
-    BatchUpdateResult,
     BatchCreateInput,
+    BatchCreateResult,
     BatchDeleteInput,
-    BatchUpdateInput,
+    BatchDeleteResult,
     BatchItemResult,
+    BatchItemStatuses,
+    BatchStatus,
+    BatchUpdateInput,
+    BatchUpdateResult,
 )
+from .currency import Currency
 from .products import (
-    ProductAttributes,
+    MarketData,
     Product,
+    ProductAttributes,
     ProductShort,
     Variant,
     VariantShort,
-    MarketData,
 )
 from .response import Response
 from .sales import (
-    Shipment,
-    AuthenticationDetails,
     Adjustments,
-    Payout,
+    AuthenticationDetails,
+    Listing,
+    ListingDetail,
+    ListingStatus,
+    Operation,
+    OperationStatus,
     Order,
     OrderDetail,
     OrderShort,
-    Operation,
-    Listing,
-    ListingDetail,
+    Payout,
+    Shipment,
 )

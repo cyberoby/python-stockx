@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any
 
 from .base import StockXBaseModel
+from .currency import Currency
 from ..format import iso
 
 
@@ -51,9 +52,7 @@ class BatchDeleteResult(BatchResultBase):
 
 @dataclass(frozen=True, slots=True)
 class BatchUpdateResult(BatchResultBase):
-    listing_input: BatchUpdateInput | None = (
-        None  # TODO: mmh? what happens if its not present?
-    )
+    listing_input: BatchUpdateInput | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,7 +61,7 @@ class BatchCreateInput(StockXBaseModel):
     amount: float
     quantity: int | None = None
     active: bool = True
-    currency_code: str = ""
+    currency_code: Currency | None = None
     expires_at: datetime | None = None
 
     def to_json(self) -> dict[str, Any]:
@@ -71,7 +70,7 @@ class BatchCreateInput(StockXBaseModel):
             "quantity": int(self.quantity),
             "amount": str(int(self.amount)),
             "expiresAt": iso(self.expires_at),
-            "currencyCode": self.currency_code,
+            "currencyCode": str(self.currency_code),
             "active": self.active,
         }
 
@@ -80,7 +79,7 @@ class BatchCreateInput(StockXBaseModel):
 class BatchUpdateInput(StockXBaseModel):
     listing_id: str
     active: bool | None = None
-    currency_code: str = ""
+    currency_code: Currency | None = None
     expires_at: datetime | None = None
     amount: float | None = None
 
@@ -89,7 +88,7 @@ class BatchUpdateInput(StockXBaseModel):
             "listingId": self.listing_id,
             "amount": str(int(self.amount)),
             "expiresAt": iso(self.expires_at),
-            "currencyCode": self.currency_code,
+            "currencyCode": str(self.currency_code),
             "active": self.active,
         }
 
