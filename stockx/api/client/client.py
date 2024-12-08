@@ -11,6 +11,7 @@ from ...exceptions import (
 from ...models import Response
 from ...types import JSON, Params
 
+
 GRANT_TYPE = 'refresh_token'
 REFRESH_URL = 'https://accounts.stockx.com/oauth/token'
 REFRESH_TOKEN_SLEEP = 3600
@@ -18,7 +19,36 @@ AUDIENCE = 'gateway.stockx.com'
 
 
 class StockXAPIClient:
-    """Interface for making HTTP requests to StockX API."""
+    """Interface for making HTTP requests to StockX API.
+
+    This client handles token refreshes and HTTP requests to the StockX API
+    with automatic retry and rate limiting functionality.
+
+    Parameters
+    ----------
+    hostname : `str`
+        The StockX API hostname.
+    version : `str`
+        The StockX API version.
+    x_api_key : `str`
+        The API key for StockX.
+    client_id : `str`
+        OAuth client ID.
+    client_secret : `str`
+        OAuth client secret.
+    refresh_token : `str`
+        OAuth refresh token.
+
+    Attributes
+    ----------
+    url : `str`
+        The complete base URL for API requests.
+
+    Notes
+    -----
+    The client must be initialized with `initialize()` before making requests
+    and should be closed with `close()` when finished.
+    """
     
     def __init__(
             self,
@@ -73,7 +103,7 @@ class StockXAPIClient:
         """Perform `DELETE` request."""
         return await self._do('DELETE', endpoint)
     
-    @throttle(seconds=3)
+    @throttle(seconds=1)
     @retry(max_attempts=5, initial_delay=2, timeout=60)
     async def _do(
             self, 

@@ -3,7 +3,11 @@ from datetime import datetime
 from itertools import batched
 
 from ..item import Item, ListedItem
-from ....models import BatchCreateInput, BatchUpdateInput, Currency
+from ....models import (
+    BatchCreateInput, 
+    BatchUpdateInput, 
+    Currency
+)
 from ....processing import group_and_sum
 
 

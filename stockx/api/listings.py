@@ -18,11 +18,13 @@ from ..models import (
 
 
 class Listings(StockXAPIBase):
+    """Interface for interacting with listings."""
 
     async def get_listing(
             self, 
             listing_id: str
     ) -> ListingDetail:
+        """Get a listing by its ID."""
         response = await self.client.get(f'/selling/listings/{listing_id}')
         return ListingDetail.from_json(response.data)
 
@@ -38,6 +40,7 @@ class Listings(StockXAPIBase):
             page_size: int = 10,
             oldest_first: bool = False,
     ) -> AsyncIterator[Listing]:
+        """Get all listings."""
         params = {
             'productIds': comma_separated(product_ids),
             'variantIds': comma_separated(variant_ids),
@@ -64,6 +67,7 @@ class Listings(StockXAPIBase):
             expires_at: datetime | None = None,
             active: bool | None = None
     ) -> Operation:
+        """Create a listing."""
         data = {
             'amount': f'{amount:.0f}',
             'variantId': variant_id,
@@ -81,6 +85,7 @@ class Listings(StockXAPIBase):
             currency: Currency | None = None,
             expires_at: datetime | None = None
     ) -> Operation:
+        """Activate a listing."""
         data = {
             'amount': f'{amount:.0f}',
             'currencyCode': str(currency),
@@ -95,6 +100,7 @@ class Listings(StockXAPIBase):
             self, 
             listing_id: str
     ) -> Operation:
+        """Deactivate a listing."""
         response = await self.client.put(
             f'/selling/listings/{listing_id}/deactivate'
         )
@@ -107,6 +113,7 @@ class Listings(StockXAPIBase):
             currency: Currency | None = None,
             expires_at: datetime | None = None,
     ) -> Operation:
+        """Update a listing."""
         data = {
             'amount': f'{amount:.0f}',
             'currencyCode': str(currency),
@@ -121,6 +128,7 @@ class Listings(StockXAPIBase):
             self, 
             listing_id: str
     ) -> Operation:
+        """Delete a listing."""
         response = await self.client.delete(f'/selling/listings/{listing_id}')
         return Operation.from_json(response.data)
     
@@ -129,6 +137,7 @@ class Listings(StockXAPIBase):
             listing_id: str, 
             operation_id: str
     ) -> Operation:
+        """Get a listing operation by its ID."""
         response = await self.client.get(
             f'/selling/listings/{listing_id}/operations/{operation_id}'
         )
@@ -140,6 +149,7 @@ class Listings(StockXAPIBase):
             limit: int = None,
             page_size: int = 10
     ) -> AsyncIterator[Operation]:
+        """Get all operations for a listing."""
         async for operation in self._page_cursor(
             endpoint=f'/selling/listings/{listing_id}/operations',
             results_key='operations',
@@ -152,6 +162,7 @@ class Listings(StockXAPIBase):
             self,
             operation: Operation
     ) -> bool:
+        """Check if a listing operation has succeeded."""
         while operation.status == OperationStatus.PENDING:
             operation = await self.get_listing_operation(
                 listing_id=operation.listing_id,

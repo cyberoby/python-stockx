@@ -9,6 +9,38 @@ from ..exceptions import StockXNotInitialized
 
 
 class StockX:
+    """Main interface for interacting with the StockX API.
+
+    Parameters
+    ----------
+    client : StockXAPIClient
+        The API client used for making requests to StockX.
+
+    Attributes
+    ----------
+    batch : `Batch`
+        Interface for batch listing operations.
+    catalog : `Catalog`
+        Interface for product catalog operations.
+    listings : `Listings`
+        Interface for listing operations.
+    orders : `Orders`
+        Interface for viewing sales orders.
+
+    Notes
+    -----
+    This class must be initialized with a valid StockXAPIClient and logged in
+    before accessing any endpoints. It is recommended to use this class as an
+    async context manager.
+
+    Examples
+    --------
+    >>> client = StockXAPIClient(...)
+    >>> async with StockX(client) as stockx:
+    ...     # Access API endpoints
+    ...     await stockx.catalog.get_product(...)
+    ...     await stockx.listings.create_listing(...)
+    """
 
     __slots__ = (
         '_batch', 
@@ -24,6 +56,7 @@ class StockX:
         self._initialized: bool = False
 
     async def login(self) -> None:
+        """Login to the StockX API."""
         if self._initialized:
             return
 
@@ -60,6 +93,7 @@ class StockX:
         return self._get('orders')
         
     async def close(self) -> None:
+        """Close and logout from the StockX API."""
         if self.client:
             try:
                 await self.client.close()

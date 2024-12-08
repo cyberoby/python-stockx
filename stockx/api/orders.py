@@ -7,11 +7,13 @@ from ..models import Order, OrderDetail
 
 
 class Orders(StockXAPIBase):
-    
+    """Interface for interacting with sales orders."""
+
     async def get_order(
             self, 
             order_number: str
     ) -> OrderDetail:
+        """Get a sales order by its number."""
         response = await self.client.get(f'/selling/orders/{order_number}')
         return OrderDetail.from_json(response.data)
 
@@ -25,6 +27,7 @@ class Orders(StockXAPIBase):
             limit: int | None = None, 
             page_size: int = 10
     ) -> AsyncIterator[Order]:
+        """Get the history of completed sales orders."""
         params = {
             'fromDate': iso_date(from_date),
             'toDate': iso_date(to_date),
@@ -50,6 +53,7 @@ class Orders(StockXAPIBase):
             limit: int | None = None, 
             page_size: int = 10
     ) -> AsyncIterator[Order]:
+        """Get currently active sales orders."""
         params = {
             'orderStatus': order_status,
             'productId': product_id,

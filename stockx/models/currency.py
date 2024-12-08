@@ -2,6 +2,26 @@ from enum import Enum
 
 
 class Currency(Enum):
+    """Supported currency codes.
+
+    `AUD`
+    `CAD`
+    `CHF`
+    `EUR`
+    `GBP`
+    `HKD`
+    `JPY`
+    `KRW`
+    `MXN`
+    `NZD`
+    `SGD`
+    `USD`
+
+    Parameters
+    ----------
+    value : `str`
+        The three-letter currency code
+    """
     AUD = 'AUD'
     CAD = 'CAD' 
     CHF = 'CHF'
@@ -14,4 +34,5 @@ class Currency(Enum):
     NZD = 'NZD'
     SGD = 'SGD'
     USD = 'USD'
+
 

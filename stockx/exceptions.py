@@ -61,7 +61,7 @@ class StockXRequestError(StockXException):
     
 
 class StockXBadRequest(StockXRequestError):
-    """Raised for HTTP 400 errors - invalid requests."""
+    """Raised for HTTP 400 errors - invalid request."""
     def __init__(
             self, 
             message: str = 'Bad request.', 
@@ -101,7 +101,7 @@ class StockXNotFound(StockXRequestError):
 
 
 class StockXRateLimited(StockXRequestError):
-    """Raised for HTTP 429 errors - rate limited."""
+    """Raised for HTTP 429 errors - too many requests."""
     def __init__(
             self, 
             message: str = "You're going too fast.", 

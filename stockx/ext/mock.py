@@ -11,7 +11,34 @@ async def mock_listing(
         amount: float = 1000,
         currency: Currency = Currency.EUR,
 ) -> AsyncIterator[ListingDetail]:
+    """Create a temporary test listing that gets cleaned up after use.
 
+    Parameters
+    ----------
+    stockx : `StockX`
+        The StockX API interface to use.
+    amount : `float`, default 1000
+        The price of the listing. Set a high price to avoid being sold.
+    currency : `Currency`, default `Currency.EUR`
+        The currency for the listing amount.
+
+    Yields
+    ------
+    `ListingDetail`
+        The temporary listing.
+
+    Raises
+    ------
+    `RuntimeError`
+        If the listing creation fails.
+
+    Examples
+    --------
+    >>> async with mock_listing(stockx) as listing:
+    ...     # Check if there's a discount on selling fees 
+    ...     if listing.payout.transaction_fee < 0.05:
+    ...         print(f'Discount on selling fees!')
+    """
     product = await anext(stockx.catalog.search_catalog('adidas'))
     variants = await stockx.catalog.get_all_product_variants(product.id)
     create = await stockx.listings.create_listing(
@@ -21,7 +48,8 @@ async def mock_listing(
         active=True,
     )
     if not await stockx.listings.operation_succeeded(create):
-        pass # raise what?
+        message = create.error if create.error else 'Unknown error'
+        raise RuntimeError(f'Failed to create mock listing: {message}')
     
     try:
         listing = await stockx.listings.get_listing(create.listing_id)
@@ -29,4 +57,4 @@ async def mock_listing(
     finally:
         delete = await stockx.listings.delete_listing(create.listing_id)
         if not await stockx.listings.operation_succeeded(delete):
-            pass # log
+            pass # TODO: log

@@ -6,7 +6,14 @@ from ..types import JSON, Params
 
 
 class StockXAPIBase:
-
+    """Base class for StockX API endpoints.
+    
+    Parameters
+    ----------
+    client : `StockXAPIClient`
+        StockX API client instance for making requests
+    """
+    
     def __init__(self, client: StockXAPIClient) -> None:
         self.client = client
      
@@ -19,6 +26,8 @@ class StockXAPIBase:
             page_size: int = 10,
             reverse: bool = False,
     ) -> AsyncIterator[JSON]:
+        """Paginate through API results."""
+
         params = params if params else {}
         params['pageSize'] = page_size
 
@@ -62,6 +71,8 @@ class StockXAPIBase:
             limit: int | None = None, 
             page_size: int = 10
     ) -> AsyncIterator[JSON]:
+        """Paginate through API results using cursor pagination."""
+        
         params = params if params else {}
         params['pageSize'] = page_size
         count = 0
@@ -83,6 +94,7 @@ class StockXAPIBase:
 
 
 def check(count: int, limit: int | None) -> bool:
+    """Check if the number of results has reached the limit."""
     return count < limit if limit is not None else True
 
 

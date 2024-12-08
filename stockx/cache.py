@@ -63,21 +63,21 @@ def cache_by(
     ----------
     cache_keys : str
         Names of parameters to use as cache keys
-    maxsize : int
+    maxsize : `int`
         Maximum number of items to store in the cache
-    ttl : float | None
+    ttl : `float` | `None`
         Time to live in seconds for cached values. 
         If `None`, cache never expires.
         
     Returns
     -------
-    _CacheDecorator
+    `_CacheDecorator`
         Configured caching decorator
         
     Examples
     --------
     >>> @cache_by('sku', maxsize=4096, ttl=60)
-    ... async def get_product_market_data(
+    >>> async def get_product_market_data(
     ...     self, 
     ...     product_id: str, 
     ...     currency_code: str

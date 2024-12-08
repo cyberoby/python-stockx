@@ -9,7 +9,8 @@ from ...exceptions import StockXRequestError
 T = TypeVar('T')
 
 
-class _Retry:
+class _RetryDecorator:
+    """Retry async function calls until successful or max attempts reached."""
 
     def __init__(
             self,
@@ -57,5 +58,30 @@ def retry(
         max_attempts: int = 6,
         initial_delay: float = 1.0,
         timeout: float = 60.0,
-) -> _Retry:
-    return _Retry(max_attempts, initial_delay, timeout)
+) -> _RetryDecorator:
+    """Create a decorator that retries failed API calls with exponential backoff.
+    
+    Parameters
+    ----------
+    max_attempts : `int`
+        Maximum number of retry attempts before giving up
+    initial_delay : `float`
+        Initial delay between retries in seconds
+    timeout : `float`
+        Maximum total time to spend retrying in seconds
+        
+    Returns
+    -------
+    `_RetryDecorator`
+        Configured retry decorator
+        
+    Examples
+    --------
+    >>> @retry(max_attempts=3, initial_delay=1.0, timeout=30.0)
+    ... async def get(self, endpoint: str, params: Params | None = None) -> Response:
+    ...     # Failed requests will be retried up to 3 times
+    ...     # with exponential backoff starting at 1 second
+    ...     # and total retry time limited to 30 seconds
+    ...     ...
+    """
+    return _RetryDecorator(max_attempts, initial_delay, timeout)

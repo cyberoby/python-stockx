@@ -11,12 +11,19 @@ from ..models import (
 
 
 class Catalog(StockXAPIBase):
+    """Interface for interacting with the StockX catalog."""
 
     @cache_by('product_id')
     async def get_product(
             self, 
             product_id: str
     ) -> Product:
+        """Get a product by its ID.
+
+        Notes
+        -----
+        Results are cached indefinitely.
+        """
         response = await self.client.get(f'/catalog/products/{product_id}')
         return Product.from_json(response.data)
     
@@ -25,6 +32,12 @@ class Catalog(StockXAPIBase):
             self, 
             product_id: str
     ) -> list[Variant]:
+        """Get all variants for a product.
+
+        Notes
+        -----
+        Results are cached indefinitely.
+        """
         response = await self.client.get(
             f'/catalog/products/{product_id}/variants'
         )
@@ -36,6 +49,12 @@ class Catalog(StockXAPIBase):
             product_id: str, 
             variant_id: str
     ) -> Variant:
+        """Get a variant by its product and variant IDs.
+
+        Notes
+        -----
+        Results are cached indefinitely.
+        """
         response = await self.client.get(
             f'/catalog/products/{product_id}/variants/{variant_id}'
         )
@@ -48,6 +67,12 @@ class Catalog(StockXAPIBase):
             variant_id: str, 
             currency: Currency
     ) -> MarketData:
+        """Get market data for a variant.
+
+        Notes
+        -----
+        Results are cached for 30 seconds.
+        """
         params = {'currencyCode': str(currency)}    
         response = await self.client.get(
             f'/catalog/products/{product_id}/variants/{variant_id}/market-data',
@@ -61,6 +86,12 @@ class Catalog(StockXAPIBase):
             product_id: str, 
             currency: Currency
     ) -> list[MarketData]:
+        """Get market data for all variants of a product.
+
+        Notes
+        -----
+        Results are cached for 30 seconds.
+        """
         params = {'currencyCode': str(currency)}    
         response = await self.client.get(
             f'/catalog/products/{product_id}/market-data', 
@@ -74,6 +105,7 @@ class Catalog(StockXAPIBase):
             limit: int | None = None, 
             page_size: int = 10
     ) -> AsyncIterator[Product]:
+        """Search the catalog for products."""
         params = {'query': query}
         async for product in self._page(
             endpoint='/catalog/search', 

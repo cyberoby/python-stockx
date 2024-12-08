@@ -8,16 +8,19 @@ from datetime import datetime
 
 
 def iso(datetime: datetime | None) -> str | None:
+    """Convert datetime to ISO 8601 format with milliseconds."""
     if not datetime:
         return None
     return f'{datetime.isoformat(timespec='seconds')}.000Z'
 
 
 def comma_separated(values: Iterable[str] | None) -> str | None:
+    """Join strings with commas."""
     return ','.join(values) if values else None
 
 
 def iso_date(datetime: datetime | None) -> str | None:
+    """Convert datetime to YYYY-MM-DD format."""
     return datetime.strftime('%Y-%m-%d') if datetime else None
 
 

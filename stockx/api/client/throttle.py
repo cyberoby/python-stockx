@@ -9,7 +9,9 @@ from typing import Any, TypeVar
 T = TypeVar('T')
 
 
-class _Throttler:
+class _ThrottleDecorator:
+    """Throttle async function calls to avoid rate limiting."""
+    
     def __init__(self, seconds: float) -> None:
         self.seconds = seconds
         self._queue: deque[tuple[asyncio.Future[T], Awaitable[T]]] = deque()
@@ -50,8 +52,27 @@ class _Throttler:
         return wrapper
     
 
-def throttle(seconds: float) -> _Throttler:
-    return _Throttler(seconds)
+def throttle(seconds: float) -> _ThrottleDecorator:
+    """Create a decorator that throttles API calls.
+    
+    Parameters
+    ----------
+    seconds : `float`
+        Minimum time between API calls in seconds
+        
+    Returns
+    -------
+    `_Throttler`
+        Configured throttling decorator
+        
+    Examples
+    --------
+    >>> @throttle(seconds=3)
+    ... async def get(self, endpoint: str, params: Params | None = None) -> Response:
+    ...     # Requests will be queued and performed every 3 seconds
+    ...     ...
+    """
+    return _ThrottleDecorator(seconds)
 
 
 def now() -> float:
