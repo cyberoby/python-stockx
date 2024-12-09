@@ -135,6 +135,7 @@ Using async functions:
 ### stockx.ext.mock_listing
 
 The `mock_listing` context manager can be used to create temporary listings for various purposes.
+The `Inventory` class uses it to retrieve current selling fees in order to calculate payouts accurately.
 
 ### Examples
 
@@ -145,6 +146,24 @@ The `mock_listing` context manager can be used to create temporary listings for 
 ...     # Check if there's a discount on selling fees 
 ...     if listing.payout.transaction_fee == 0:
 ...         print(f'100% discount on selling fees!')
+```
+
+### stockx.ext.search
+
+The `search` module provides utilities for searching the StockX catalog.
+Results are cached indefinitely to reduce the number of requests to the API.
+
+### Examples
+
+#### Search for a product by SKU
+
+```python
+>>> product = await product_by_sku(stockx, 'CW2288-111')
+>>> print(product.name)
+Air Force 1 '07 Triple White
+>>> product = await product_by_sku(stockx, 'JABBERWOCKY')
+>>> print(product)
+None
 ```
 
 ## API Endpoint Mappings
