@@ -16,6 +16,10 @@ def create_listings_inputs(
         currency: Currency, 
         batch_size: int
 ) -> Iterator[tuple[BatchCreateInput, ...]]:
+    """Create batch input items for creating new listings.
+
+    Groups items by variant ID and price to minimize API calls.
+    """
     grouped_items = group_and_sum(
         items, 
         group_keys=('variant_id', 'price'), 
@@ -38,6 +42,12 @@ def sync_listings_inputs(
         currency: Currency, 
         batch_size: int
 ) -> Iterator[tuple[BatchCreateInput, ...]]:
+    """Create batch input items for syncing listing quantities.
+
+    Groups items by variant ID and price to minimize API calls.
+    Uses `ListedItem.quantity_to_sync()` to determine how many 
+    listings to create.
+    """
     grouped_items = group_and_sum(
         items, 
         group_keys=('variant_id', 'price'), 
@@ -60,12 +70,13 @@ def update_listings_inputs(
         currency: Currency, 
         batch_size: int
 ) -> Iterator[tuple[BatchUpdateInput, ...]]:
+    """Create batch input items for updating existing listings."""
     inputs = [
         BatchUpdateInput(
             listing_id=listing_id,
             amount=item.price,
             currency_code=currency.value,
-            expires_at=datetime(2024, 12, 30),
+            active=True,
         )
         for item in items
         for listing_id in item.listing_ids
@@ -77,4 +88,5 @@ def delete_listings_inputs(
         listing_ids: Iterable[str], 
         batch_size: int
 ) -> Iterator[tuple[str, ...]]:
+    """Create batched inputs for deleting listings."""
     return batched(listing_ids, batch_size)

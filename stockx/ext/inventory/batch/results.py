@@ -14,12 +14,20 @@ from ....models import (
 )
 
 
-BatchResult = BatchCreateResult | BatchDeleteResult | BatchUpdateResult
-
-
 @pretty_str
 @dataclass(slots=True, frozen=True)
 class ErrorDetail:
+    """Represents details about errors that occurred during batch operations.
+
+    Parameters
+    ----------
+    message : `str`
+        The error message.
+    occurrences : `int`
+        Number of times this error occurred.
+    listing_id : `str | None`
+        The listing ID associated with the error, if any.
+    """
     message: str
     occurrences: int
     listing_id: str | None = None
@@ -27,9 +35,26 @@ class ErrorDetail:
     @classmethod
     def from_results(
         cls, 
-        results: Iterable[BatchResult],
+        results: Iterable[
+            BatchCreateResult | BatchDeleteResult | BatchUpdateResult
+        ],
         include_listing_id: bool = False
     ) -> Iterator[ErrorDetail]:
+        """Create error details from batch operation results.
+
+        Parameters
+        ----------
+        results : `Iterable[BatchCreateResult | BatchDeleteResult | BatchUpdateResult]`
+            The batch operation results to extract errors from.
+        include_listing_id : `bool`, default False
+            If `True`, creates separate error details for each listing ID.
+            If `False`, groups errors by message.
+
+        Returns
+        -------
+        `Iterator[ErrorDetail]`
+            Iterator of error details extracted from the results.
+        """
         if not include_listing_id:
             errors = (result.error for result in results if result.error)
             for message, occurrences in Counter(errors).items():
@@ -44,6 +69,18 @@ class ErrorDetail:
 
     @classmethod
     def from_messages(cls, errors: Iterable[str]) -> Iterator[ErrorDetail]:
+        """Create error details from error messages.
+
+        Parameters
+        ----------
+        errors : `Iterable[str]`
+            The error messages to create details from.
+
+        Returns
+        -------
+        `Iterator[ErrorDetail]`
+            Iterator of error details with occurrence counts.
+        """
         for message, occurrences in Counter(errors).items():
             yield cls(message, occurrences)
 
@@ -51,6 +88,27 @@ class ErrorDetail:
 @pretty_str
 @dataclass(slots=True, frozen=True)
 class UpdateResult:
+    """Represents the results of listing operations.
+
+    Consolidates the results of create, update and delete listing
+    operations for a single item, tracking successful and failed
+    operations along with error details.
+
+    Parameters
+    ----------
+    item : `Item` | `ListedItem` | `None`
+        The item the operations were performed on, if available.
+    created : `tuple[str, ...]`
+        Listing IDs that were successfully created.
+    updated : `tuple[str, ...]`
+        Listing IDs that were successfully updated.
+    deleted : `tuple[str, ...]`
+        Listing IDs that were successfully deleted.
+    failed : `tuple[str, ...]`
+        Listing IDs that failed to be created/updated/deleted.
+    errors_detail : `tuple[ErrorDetail, ...]`
+        Details about errors that occurred during operations.
+    """
     item: Item | ListedItem | None = None
     created: tuple[str, ...] = field(default_factory=tuple)
     updated: tuple[str, ...] = field(default_factory=tuple)
@@ -63,6 +121,18 @@ class UpdateResult:
             cls, 
             *results: Iterable[UpdateResult]
     ) -> Iterator[UpdateResult]:
+        """Consolidate multiple update results into a single result.
+
+        Parameters
+        ----------
+        results : `Iterable[UpdateResult]`
+            The results to consolidate.
+
+        Returns
+        -------
+        `Iterator[UpdateResult]`
+            Consolidated results.
+        """
         
         # Group results by item
         grouped_results: defaultdict[ListedItem, list[UpdateResult]] = defaultdict(list)
@@ -105,6 +175,7 @@ class UpdateResult:
             items: Iterable[ListedItem],
             results: Iterable[BatchUpdateResult],
     ) -> Iterator[UpdateResult]:
+        """Create update results for a batch listing update operation."""
         error_map = {r.listing_input.listing_id: r.error for r in results}
 
         for item in items:
@@ -126,6 +197,7 @@ class UpdateResult:
             items: Iterable[ListedItem],
             results: Iterable[BatchCreateResult],
     ) -> Iterator[UpdateResult]:
+        """Create update results for a batch listing create operation."""
         item_map = {(item.variant_id, item.price): item for item in items}
         
         # group by (variant_id, price)
@@ -140,7 +212,7 @@ class UpdateResult:
                 continue
 
             created = tuple(r.listing_id for r in item_results if r.listing_id)
-            failed = tuple(r.error for r in results if r.error)
+            failed = tuple(r.error for r in item_results if r.error)
             errors_detail = tuple(ErrorDetail.from_results(item_results))
             
             yield cls(
@@ -155,6 +227,7 @@ class UpdateResult:
             cls, 
             results: Iterable[BatchDeleteResult],
     ) -> UpdateResult:
+        """Create update results for a batch listing delete operation."""
         deleted = (result.listing_id for result in results if not result.error)
         failed = (result.listing_input.id for result in results if result.error)
         errors = (ErrorDetail.from_results(results, include_listing_id=True))

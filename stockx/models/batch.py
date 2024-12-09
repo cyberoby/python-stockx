@@ -29,7 +29,7 @@ class BatchStatus(StockXBaseModel):
     created_at: datetime
     updated_at: datetime | None = None
     completed_at: datetime | None = None
-    item_statuses: BatchItemStatuses | None = None
+    item_statuses: BatchItemStatuses
 
 
 @dataclass(frozen=True, slots=True)

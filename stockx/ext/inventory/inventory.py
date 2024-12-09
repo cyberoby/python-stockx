@@ -325,8 +325,10 @@ class Inventory:
         for item in items: 
             if await computed_value(item, condition):
                 # Change item's price if condition is met
-                item.price = await computed_value(item, new_price)
-                items_to_update.append(item)
+                new_price = await computed_value(item, new_price)
+                if new_price != item.price: # Avoid unnecessary updates
+                    item.price = new_price
+                    items_to_update.append(item)
 
         # Avoid unnecessary updates when calling Inventory.update()
         self._price_updates.difference_update(items_to_update)
@@ -350,7 +352,7 @@ class Inventory:
             market_value = get_market_value(market_data)
 
             if not market_value:
-                pass # TODO handle null cases
+                return item.price # Keep current price
 
             if percentage:  
                 return market_value.amount * (1 - change)

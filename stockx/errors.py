@@ -1,5 +1,13 @@
 from collections.abc import Iterable
-from typing import Literal
+from typing import Literal, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .models import (
+        BatchCreateResult,
+        BatchUpdateResult,
+        BatchDeleteResult,
+    )
+    from .ext.inventory import UpdateResult
 
 
 class StockXException(Exception):
@@ -17,22 +25,79 @@ class StockXNotInitialized(StockXException):
         super().__init__(message)
     
 
-class StockXBatchTimeout(Exception):
-    """Raised when a batch operation times out."""
+class StockXBatchTimeout(StockXException):
+    """Raised when a batch operation times out.
+
+    Parameters
+    ----------
+    message : `str`
+        Error message.
+    queued_batch_ids : `Iterable[str]`
+        Batch IDs that are still queued after timeout.
+    partial_batch_results : `Iterable[BatchCreateResult | BatchUpdateResult | BatchDeleteResult]`
+        Available results from completed batch operations.
+
+    Attributes
+    ----------
+    message : `str`
+    queued_batch_ids : `list[str]`
+    partial_batch_results : `list[BatchCreateResult | BatchUpdateResult | BatchDeleteResult]`
+    """
     def __init__(
             self, 
             message: str, 
-            batch_ids: Iterable[str],
+            queued_batch_ids: Iterable[str],
+            partial_batch_results: Iterable[
+                BatchCreateResult | BatchUpdateResult | BatchDeleteResult
+            ]
     ) -> None:
         super().__init__(message)
         self.message = message
-        self.batch_ids = batch_ids
+        self.queued_batch_ids = list(queued_batch_ids)
+        self.partial_batch_results = list(partial_batch_results)
+    
+    def __str__(self) -> str:
+        return super().__str__() + f' Missing Batch IDs: {self.queued_batch_ids}'
+    
+
+class StockXIncompleteOperation(StockXException):
+    """Raised when an operation couldn't complete fully.
+
+    Parameters
+    ----------
+    message : `str`
+        Error message.
+    partial_results : `Iterable[UpdateResult]`
+        Available results from completed operations.
+    timed_out_batch_ids : `Iterable[str]`
+        Batch IDs that are still queued after timeout.
+
+    Attributes
+    ----------
+    message : `str`
+    partial_results : `list[UpdateResult]`
+    timed_out_batch_ids : `list[str]`
+    """
+    def __init__(
+            self, 
+            message: str,
+            partial_results: Iterable[UpdateResult],
+            timed_out_batch_ids: Iterable[str],
+    ) -> None:
+        super().__init__(message)
+        self.message = message
+        self.partial_results = list(partial_results)
+        self.timed_out_batch_ids = list(timed_out_batch_ids)
 
     def __str__(self) -> str:
-        return super().__str__() + f' Missing Batch IDs: {self.batch_ids}'
+        return (
+            f'{super().__str__()}\n'
+            f'Incomplete batch IDs: {', '.join(self.timed_out_batch_ids)}\n'
+            f'Completed results: {'\n'.join(str(r) for r in self.partial_results)}\n'
+        )
 
 
-class StockXOperationTimeout(Exception):
+class StockXOperationTimeout(StockXException):
     """Raised when an operation times out."""
     def __init__(
             self, 

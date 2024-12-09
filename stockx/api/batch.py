@@ -196,13 +196,13 @@ async def batch_completed(
         If batch operations don't complete within timeout
     """
     finished_batch_ids = set()
-    pending_batch_ids = set(batch_ids)
+    queued_batch_ids = set(batch_ids)
 
     sleep, waited = 1, 0
     while waited <= timeout:
         await asyncio.sleep(sleep)
 
-        for batch_id in pending_batch_ids:
+        for batch_id in queued_batch_ids:
             status = await get_batch_status(batch_id)
             if (
                 status.item_statuses.completed
@@ -211,8 +211,8 @@ async def batch_completed(
             ):
                 finished_batch_ids.add(batch_id)
 
-        pending_batch_ids.difference_update(finished_batch_ids)
-        if len(pending_batch_ids) == 0:
+        queued_batch_ids.difference_update(finished_batch_ids)
+        if len(queued_batch_ids) == 0:
             return
         
         waited += sleep
@@ -220,6 +220,6 @@ async def batch_completed(
     else:
         raise StockXBatchTimeout(
             message='Batch operation timed out.', 
-            batch_ids=pending_batch_ids
+            queued_batch_ids=queued_batch_ids
         )
 
