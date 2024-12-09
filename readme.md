@@ -16,23 +16,11 @@ Direct mappings to StockX API endpoints through specialized interfaces:
 - `Orders` - Sales order operations
 - `Batch` - Batch listing operations
 
-Main features:
-
-#### Request Handling
+#### Main features
 - 🔄 Automatic token refresh and session management
 - 🚦 Request throttling to prevent rate limits
 - 🔁 Automatic retries with exponential backoff for failed requests
 - ⚡ Response caching for invariant data (e.g., product details)
-
-#### Error Handling
-- Automatic retry for common HTTP errors (408, 429, 500, 502, 503, 504)
-- Structured error responses with detailed information
-- Custom exceptions for different error scenarios (rate limits, timeouts, etc.)
-
-#### Performance Optimizations
-- Response caching for invariant data like product details and variants
-- Request throttling to maintain optimal throughput
-- Batch operations for bulk listing management
 
 ### High-Level Abstractions 
 
