@@ -102,8 +102,8 @@ Expected payout: $89.80
 Expected payout: $89.80
 ```
 
-#### Change prices dynamically
-
+#### Change prices dynamically by injecting user-defined functions
+Using functions:
 ```python
 >>> # Apply 10% discount to items with payout over 200
 >>> await inventory.change_price(
@@ -112,7 +112,25 @@ Expected payout: $89.80
 ...     condition=lambda item: item.payout() > 200
 ... )
 ```
-
+Using async functions:
+```python
+>>> async def dynamic_beat_by(item: ListedItem) -> float:
+...     market_data = await inventory.get_item_market_data(item)
+...     lowest_ask = market_data.lowest_ask.amount
+...     highest_bid = market_data.highest_bid.amount
+...     bid_ask_spread = lowest_ask - highest_bid
+...     return bid_ask_spread * 0.01    # Beat by 1.0% of bid-ask spread
+...
+>>> async def dynamic_condition(item: ListedItem) -> bool:
+...     market_data = await inventory.get_item_market_data(item)
+...     return item.price > market_data.lowest_ask.amount   # Only if price > lowest ask
+...
+>>> await inventory.beat_lowest_ask(
+...     items=items,
+...     beat_by=dynamic_beat_by,      # Dynamic amount based on market
+...     condition=dynamic_condition   # Dynamic condition based on market
+... )
+```
 
 ## API Endpoint Mappings
 
