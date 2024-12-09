@@ -34,6 +34,18 @@ High-level abstractions for advanced business logic and inventory management:
 - `mock_listing` - Create temporary listings for testing
 - `search` - Product search utilities
 
+### stockx.ext.inventory
+
+The `Inventory` class provides a high-level interface for managing listings on StockX.
+It optimizes performance by batching multiple updates together into single API calls. 
+When used as an async context manager, it automatically fetches current selling fees 
+and handles pending price and quantity changes on exit.
+
+Features:
+- Sell or de-list items in bulk
+- Set prices based on market data and custom conditions
+- Update item quantities and prices
+
 ## API Endpoint Mappings
 
 | Method | Endpoint | SDK Function |
@@ -65,9 +77,3 @@ High-level abstractions for advanced business logic and inventory management:
 | GET | `/selling/orders/{id}` | `Orders.get_order()` |
 | GET | `/selling/orders/history` | `Orders.get_orders_history()` |
 | GET | `/selling/orders/active` | `Orders.get_active_orders()` |
-
-## High-Level Abstractions
-
-### Inventory Management
-
-The `Inventory` class provides optimized listing management by batching operations:
