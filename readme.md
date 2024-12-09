@@ -4,9 +4,9 @@ An async Python SDK for interacting with the StockX API, providing both low-leve
 
 > ⚠️ This SDK is under active development
 
-## Overview
-
-The SDK is structured in layers:
+The SDK has two layers: 
+- `stockx`: a low-level API client for easy access to StockX API endpoints
+- `stockx.ext`: high-level abstractions for advanced business logic
 
 ### Low-Level API Client
 Direct mappings to StockX API endpoints through specialized interfaces:
