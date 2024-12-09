@@ -6,7 +6,7 @@ from collections.abc import (
 )
 
 from .base import StockXAPIBase
-from ..exceptions import StockXBatchTimeout
+from ..errors import StockXBatchTimeout
 from ..models import (
     BatchStatus,
     BatchCreateResult,

@@ -2,6 +2,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from ..api import StockX 
+from ..logging import logger
 from ..models import Currency, ListingDetail
 
 
@@ -57,4 +58,7 @@ async def mock_listing(
     finally:
         delete = await stockx.listings.delete_listing(create.listing_id)
         if not await stockx.listings.operation_succeeded(delete):
-            pass # TODO: log
+            logger.warning(
+                f'Failed to delete mock listing {create.listing_id}: '
+                f'{delete.error}'
+            )

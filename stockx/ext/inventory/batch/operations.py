@@ -16,7 +16,7 @@ from .inputs import (
 from .results import UpdateResult
 from ..item import Item, ListedItem
 from ....api import StockX, Batch
-from ....exceptions import StockXBatchTimeout
+from ....errors import StockXBatchTimeout
 from ....models import BatchCreateInput
 
 

@@ -84,7 +84,7 @@ class Listings(StockXAPIBase):
     async def activate_listing(
             self, 
             listing_id: str,
-            amount: float,   # TODO required???
+            amount: float,
             currency: Currency | None = None,
             expires_at: datetime | None = None
     ) -> Operation:

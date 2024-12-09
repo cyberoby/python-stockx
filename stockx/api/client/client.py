@@ -4,7 +4,7 @@ import asyncio
 
 from .retry import retry
 from .throttle import throttle
-from ...exceptions import (
+from ...errors import (
     StockXNotInitialized,
     stockx_request_error,
 )

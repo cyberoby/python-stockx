@@ -3,7 +3,7 @@ from collections.abc import Awaitable, Callable
 from functools import wraps
 from typing import Any, TypeVar
 
-from ...exceptions import StockXRequestError
+from ...errors import StockXRequestError
 
 
 T = TypeVar('T')

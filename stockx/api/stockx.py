@@ -5,7 +5,8 @@ from .catalog import Catalog
 from .client import StockXAPIClient
 from .listings import Listings
 from .orders import Orders
-from ..exceptions import StockXNotInitialized
+from ..errors import StockXNotInitialized
+from ..logging import logger
 
 
 class StockX:
@@ -98,8 +99,7 @@ class StockX:
             try:
                 await self.client.close()
             except Exception as e:
-                # TODO: log Error while closing StockX client: {e=}
-                pass
+                logger.error(f'Error while closing StockX client: {e}')
             finally:
                 self.client = None
                 self._initialized = False
