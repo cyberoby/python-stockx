@@ -132,6 +132,21 @@ Using async functions:
 ... )
 ```
 
+### stockx.ext.mock_listing
+
+The `mock_listing` context manager can be used to create temporary listings for various purposes.
+
+### Examples
+
+#### Check if there's a discount on selling fees
+
+```python
+>>> async with mock_listing(stockx) as listing:
+...     # Check if there's a discount on selling fees 
+...     if listing.payout.transaction_fee == 0:
+...         print(f'100% discount on selling fees!')
+```
+
 ## API Endpoint Mappings
 
 | Method | Endpoint | SDK Function |
