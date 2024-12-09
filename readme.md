@@ -5,10 +5,10 @@ An async Python SDK for interacting with the StockX API, providing both low-leve
 > ⚠️ This SDK is under active development
 
 The SDK has two layers: 
-- `stockx`: a low-level API client for easy access to StockX API endpoints
+- `stockx`: low-level API client for easy access to StockX API endpoints
 - `stockx.ext`: high-level abstractions for advanced business logic
 
-### Low-Level API Client
+## stockx
 Direct mappings to StockX API endpoints through specialized interfaces:
 
 - `Catalog` - Product catalog operations
@@ -22,7 +22,9 @@ Direct mappings to StockX API endpoints through specialized interfaces:
 - 🔁 Automatic retries with exponential backoff for failed requests
 - ⚡ Response caching for invariant data (e.g., product details)
 
-### High-Level Abstractions 
+## stockx.ext
+
+High-level abstractions for advanced business logic and inventory management:
 
 - `Inventory` - Optimized high-level interface for managing listings on StockX
 - `Item` / `ListedItem` - Abstraction aggregating multiple equal listings into a single inventory entry
