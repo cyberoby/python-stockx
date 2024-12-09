@@ -17,6 +17,8 @@ from .market import create_item_market_data
 from .query import create_items_query
 from ..mock import mock_listing
 from ...api import StockX
+from ...errors import StockXIncompleteOperation
+from ...logging import logger
 from ...models import Currency
 from ...types import ComputedValue, computed_value
 
@@ -110,8 +112,19 @@ class Inventory:
         return self
     
     async def __aexit__(self, exc_type, exc_value, traceback):
-        results = await self.update()
-        # TODO: return True and suppress exc?
+        try:
+            results = await self.update()
+            logger.info(f'Successfully updated {len(results)} items on exit.')
+        except StockXIncompleteOperation as e:
+            logger.warning(
+                f'Incomplete updates on exit: {len(e.partial_results)} items '
+                f'completed, {len(e.timed_out_batch_ids)} batches timed out.'
+            )
+            return True
+        except Exception as e:
+            logger.error(f'Error during Inventory exit: {e}')
+            return False 
+        return False
 
     async def load(self) -> None:
         """Load inventory configuration like fees from StockX."""
@@ -225,24 +238,43 @@ class Inventory:
 
     async def update(self) -> Iterator[UpdateResult]:
         """Apply all pending price and quantity changes."""
-        quantity_results, price_results = [], []
+        quantity_results = []
+        price_results = []
+        timed_out_batch_ids = [] 
 
         if self._quantity_updates:
-            quantity_results = await update_quantity(
-                stockx=self.stockx, 
-                items=self._quantity_updates
-            )
+            try:
+                quantity_results = await update_quantity(
+                    stockx=self.stockx, 
+                    items=self._quantity_updates
+                )
+            except StockXIncompleteOperation as e:
+                quantity_results = e.partial_results
+                timed_out_batch_ids += e.timed_out_batch_ids
+
         if self._price_updates:
-            print('price')
-            price_results = await update_listings(
-                stockx=self.stockx, 
-                items=self._price_updates
-            )
+            try:
+                price_results = await update_listings(
+                    stockx=self.stockx, 
+                    items=self._price_updates
+                )
+            except StockXIncompleteOperation as e:
+                price_results = e.partial_results
+                timed_out_batch_ids += e.timed_out_batch_ids
 
         self._price_updates.clear()
         self._quantity_updates.clear()
 
-        return UpdateResult.consolidate(quantity_results, price_results)
+        results = UpdateResult.consolidate(quantity_results, price_results)
+
+        if timed_out_batch_ids:
+            raise StockXIncompleteOperation(
+                'Inventory items price and quantity updates timed out.',
+                partial_results=results, 
+                timed_out_batch_ids=timed_out_batch_ids
+            )
+        
+        return results
     
     async def sell(self, items: Iterable[Item]) -> list[ListedItem]:
         """
@@ -277,15 +309,14 @@ class Inventory:
         Expected payout: $89.80
         Expected payout: $89.80
         """
-        results = await publish_listings(self.stockx, items)
+        try:
+            results = await publish_listings(self.stockx, items)
+        except StockXIncompleteOperation as e:
+            results = e.partial_results
+
         return [
-            ListedItem(
-                item=result.item, 
-                inventory=self, 
-                listing_ids=result.created
-            )
-            for result in results
-            if result.created
+            ListedItem(result.item, self, result.created)
+            for result in results if result.created
         ]
     
     async def change_price(
@@ -310,6 +341,14 @@ class Inventory:
         -------
         `Iterator[UpdateResult]`
             Results of the price updates.
+
+        Raises
+        ------
+        `StockXIncompleteOperation`
+            If the price update operations timeout. This doesn't mean the
+            operations failed, but that results are not available for all
+            items. The exception contains partial results for operations that
+            completed successfully.
 
         Examples
         --------
@@ -389,6 +428,14 @@ class Inventory:
         -------
         `Iterator[UpdateResult]`
             Results of the price updates.
+
+        Raises
+        ------
+        `StockXIncompleteOperation`
+            If the beat lowest ask operations timeout. This doesn't mean the
+            operations failed, but that results are not available for all
+            items. The exception contains partial results for operations that
+            completed successfully.
         """
         return await self._beat_market_value(
             items=items, 
@@ -435,8 +482,19 @@ class Inventory:
             condition=condition, 
             percentage=percentage
         )
-        
+    
+    async def accept_highest_bid(
+            self, 
+            items: Iterable[ListedItem],
+            condition: Condition = True,
+    ) -> Iterator[UpdateResult]:
+        """Accept the highest bid for items meeting the given condition."""
+        return await self._beat_market_value(
+            items=items, 
+            get_market_value=lambda m: m.highest_bid, 
+            beat_by=0, 
+            condition=condition,
+        )
     
 
     
-
