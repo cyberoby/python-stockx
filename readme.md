@@ -34,7 +34,7 @@ Direct mappings to StockX API endpoints through specialized interfaces:
 
 ### Helper Methods
 
-The SDK provides utility methods to simplify common operations:
+The SDK provides utility methods to simplify common operations.
 
 #### Operation Status Polling
 The `operation_succeeded()` method polls the status of asynchronous listing operations:
@@ -211,7 +211,7 @@ Nike Air Force 1 '07 Triple White
 None
 ```
 
-## API Endpoint Mappings
+## API Endpoints Map
 
 | Method | Endpoint | SDK Function |
 |--------|----------|--------------|
@@ -221,6 +221,8 @@ None
 | GET | `/catalog/products/{id}/variants/{id}/market-data` | `Catalog.get_variant_market_data()` |
 | GET | `/catalog/products/{id}/market-data` | `Catalog.get_product_market_data()` |
 | GET | `/catalog/search` | `Catalog.search_catalog()` |
+| POST| `/catalog/ingestion` | Coming soon... |
+| GET | `/catalog/ingestion/{id}` | Coming soon... |
 | GET | `/selling/listings/{id}` | `Listings.get_listing()` |
 | GET | `/selling/listings` | `Listings.get_all_listings()` |
 | POST | `/selling/listings` | `Listings.create_listing()` |
@@ -242,5 +244,5 @@ None
 | GET | `/selling/orders/{id}` | `Orders.get_order()` |
 | GET | `/selling/orders/history` | `Orders.get_orders_history()` |
 | GET | `/selling/orders/active` | `Orders.get_active_orders()` |
-
+| GET | `/selling/orders/{orderNumber}/shipping-document/{shippingId}` | Coming soon... |
 
