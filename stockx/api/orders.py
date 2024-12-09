@@ -3,7 +3,12 @@ from datetime import datetime
 
 from .base import StockXAPIBase
 from ..format import iso_date
-from ..models import Order, OrderDetail
+from ..models import (
+    Order, 
+    OrderDetail, 
+    OrderStatusActive,
+    OrderStatusClosed,
+)
 
 
 class Orders(StockXAPIBase):
@@ -21,7 +26,7 @@ class Orders(StockXAPIBase):
             self,
             from_date: datetime | None = None,
             to_date: datetime | None = None,
-            order_status: str | None = None,
+            order_status: OrderStatusClosed | None = None,
             product_id: str | None = None,
             variant_id: str | None = None, 
             limit: int | None = None, 
@@ -31,7 +36,7 @@ class Orders(StockXAPIBase):
         params = {
             'fromDate': iso_date(from_date),
             'toDate': iso_date(to_date),
-            'orderStatus': order_status,
+            'orderStatus': order_status.value if order_status else None,
             'productId': product_id,
             'variantId': variant_id
         }
@@ -46,7 +51,7 @@ class Orders(StockXAPIBase):
 
     async def get_active_orders(
             self,
-            order_status: str | None = None,
+            order_status: OrderStatusActive | None = None,
             product_id: str | None = None,
             variant_id: str | None = None,
             sort_order: str | None = None, 
@@ -55,7 +60,7 @@ class Orders(StockXAPIBase):
     ) -> AsyncIterator[Order]:
         """Get currently active sales orders."""
         params = {
-            'orderStatus': order_status,
+            'orderStatus': order_status.value if order_status else None,
             'productId': product_id,
             'variantId': variant_id,
             'sortOrder': sort_order

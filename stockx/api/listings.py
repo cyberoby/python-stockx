@@ -10,8 +10,9 @@ from ..format import (
 )
 from ..models import (
     Currency,
-    ListingDetail, 
-    Listing, 
+    Listing,
+    ListingDetail,
+    ListingStatus, 
     Operation,
     OperationStatus,
 )
@@ -34,7 +35,7 @@ class Listings(StockXAPIBase):
             variant_ids: Iterable[str] | None = None,
             from_date: datetime | None = None,
             to_date: datetime | None = None,
-            listing_statuses: Iterable[str] | None = None,
+            listing_statuses: Iterable[ListingStatus] | None = None,
             inventory_types: Iterable[str] | None = None,          
             limit: int | None = None,  
             page_size: int = 10,
@@ -46,7 +47,9 @@ class Listings(StockXAPIBase):
             'variantIds': comma_separated(variant_ids),
             'fromDate': iso_date(from_date),
             'toDate': iso_date(to_date),
-            'listingStatuses': comma_separated(listing_statuses),
+            'listingStatuses': comma_separated(
+                status.value for status in listing_statuses
+            ) if listing_statuses else None,
             'inventoryTypes': comma_separated(inventory_types),
         }
         async for listing in self._page(
@@ -71,7 +74,7 @@ class Listings(StockXAPIBase):
         data = {
             'amount': f'{amount:.0f}',
             'variantId': variant_id,
-            'currencyCode': str(currency),
+            'currencyCode': currency.value if currency else None,
             'expiresAt': iso(expires_at),
             'active': active,
         }
@@ -88,7 +91,7 @@ class Listings(StockXAPIBase):
         """Activate a listing."""
         data = {
             'amount': f'{amount:.0f}',
-            'currencyCode': str(currency),
+            'currencyCode': currency.value if currency else None,
             'expiresAt': iso(expires_at),
         }
         response = await self.client.put(
@@ -116,7 +119,7 @@ class Listings(StockXAPIBase):
         """Update a listing."""
         data = {
             'amount': f'{amount:.0f}',
-            'currencyCode': str(currency),
+            'currencyCode': currency.value if currency else None,
             'expiresAt': iso(expires_at),
         }
         response = await self.client.patch(

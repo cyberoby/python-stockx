@@ -66,16 +66,26 @@ def _convert(value, type_hint):
     if type_hint is datetime:
         return datetime.fromisoformat(value)
     
+    # Manage lists (e.g. list[Adjustments])
     elif get_origin(type_hint) is list:
         # Convert each value in the list to the nested type
         nested_type_hint = get_args(type_hint)[0]
         return [_convert(v, nested_type_hint) for v in value]
     
+    # Manage union types (e.g. OrderStatusActive | OrderStatusClosed)
     elif get_origin(type_hint) is UnionType:
-        # Manage optional types (e.g. Payout | None)
-        optional_type, none_type = get_args(type_hint)
-        if none_type is type(None):
-            return _convert(value, optional_type)
+        *first_types, last_type = get_args(type_hint)
+        if last_type is type(None):
+            # Manage optional types (e.g. Payout | None)
+            types = [*first_types]
+        else:
+            types = [*first_types, last_type]
+        for type_ in types:
+            try:
+                return _convert(value, type_)
+            except (ValueError, TypeError): # Enum / model validation failed
+                continue    # Try the next type
+        return None
         
     elif issubclass(type_hint, StockXBaseModel):
         # Conver the nested JSON to the type hinted model

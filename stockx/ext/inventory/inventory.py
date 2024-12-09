@@ -139,7 +139,7 @@ class Inventory:
         
         async with mock_listing(
             stockx=self.stockx, 
-            currency_code=self.currency
+            currency=self.currency
         ) as detail:
             if detail and detail.payout:
                 self.transaction_fee = detail.payout.transaction_fee
@@ -178,7 +178,7 @@ class Inventory:
     ) -> ItemMarketData:
         market_data = await self.stockx.catalog.get_product_market_data(
             product_id=item.product_id, 
-            currency_code=self.currency
+            currency=self.currency
         )
 
         variant_market_data = next(

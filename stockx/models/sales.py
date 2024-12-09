@@ -98,10 +98,10 @@ class Payout(StockXBaseModel):
         for fee in self.adjustments:
             if 'Shipping' in fee.adjustment_type:
                 return fee.amount
-            
 
-class OrderStatus(Enum):
-    """Sales order status codes.
+
+class OrderStatusActive(Enum):
+    """Active sales order status codes.
 
     `CREATED`
     `CCAUTHORIZATIONFAILED`
@@ -114,16 +114,11 @@ class OrderStatus(Enum):
     `SYSTEMFULFILLED`
     `PAYOUTFAILED`
     `SUSPENDED`
-    `AUTHFAILED`
-    `DIDNOTSHIP`
-    `CANCELED`
-    `COMPLETED`
-    `RETURNED`
 
     Parameters
     ----------
     value : `str`
-        The sales order status code
+        The active sales order status code
     """
     CREATED = 'CREATED'
     CCAUTHORIZATIONFAILED = 'CCAUTHORIZATIONFAILED'
@@ -136,6 +131,22 @@ class OrderStatus(Enum):
     SYSTEMFULFILLED = 'SYSTEMFULFILLED'
     PAYOUTFAILED = 'PAYOUTFAILED'
     SUSPENDED = 'SUSPENDED'
+
+
+class OrderStatusClosed(Enum):
+    """Closed sales order status codes.
+
+    `AUTHFAILED`
+    `DIDNOTSHIP`
+    `CANCELED`
+    `COMPLETED`
+    `RETURNED`
+
+    Parameters
+    ----------
+    value : `str`
+        The closed sales order status code
+    """
     AUTHFAILED = 'AUTHFAILED'
     DIDNOTSHIP = 'DIDNOTSHIP'
     CANCELED = 'CANCELED'
@@ -168,7 +179,7 @@ class Order(StockXBaseModel):
     order_number: str
     listing_id: str
     amount: float
-    status: OrderStatus
+    status: OrderStatusActive | OrderStatusClosed
     currency_code: Currency
     product: ProductShort
     variant: VariantShort
@@ -225,7 +236,7 @@ class OrderShort(StockXBaseModel):
     created_at : `datetime` | `None`
     """
     order_number: str
-    order_status: OrderStatus | None = None
+    order_status: OrderStatusActive | OrderStatusClosed | None = None
     order_created_at: datetime | None = None
 
     @property
@@ -233,7 +244,7 @@ class OrderShort(StockXBaseModel):
         return self.order_number
     
     @property
-    def status(self) -> OrderStatus | None:
+    def status(self) -> OrderStatusActive | OrderStatusClosed | None:
         return self.order_status
     
     @property

@@ -31,6 +31,8 @@ from .sales import (
     Order,
     OrderDetail,
     OrderShort,
+    OrderStatusActive,
+    OrderStatusClosed,
     Payout,
     Shipment,
 )

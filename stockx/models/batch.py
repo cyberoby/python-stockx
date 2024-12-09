@@ -1,7 +1,7 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
 
 from .base import StockXBaseModel
 from .currency import Currency
@@ -149,7 +149,7 @@ class BatchCreateInput(StockXBaseModel):
             "quantity": int(self.quantity),
             "amount": str(int(self.amount)),
             "expiresAt": iso(self.expires_at),
-            "currencyCode": str(self.currency_code),
+            "currencyCode": self.currency_code.value if self.currency_code else None,
             "active": self.active,
         }
 
@@ -181,7 +181,7 @@ class BatchUpdateInput(StockXBaseModel):
             "listingId": self.listing_id,
             "amount": str(int(self.amount)),
             "expiresAt": iso(self.expires_at),
-            "currencyCode": str(self.currency_code),
+            "currencyCode": self.currency_code.value if self.currency_code else None,
             "active": self.active,
         }
 

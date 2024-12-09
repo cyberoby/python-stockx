@@ -27,7 +27,7 @@ def create_listings_inputs(
             amount=item.price, 
             quantity=item.quantity,
             active=True,
-            currency_code=currency
+            currency_code=currency.value
         ) for item in grouped_items
     ]
     return batched(inputs, batch_size)
@@ -49,7 +49,7 @@ def sync_listings_inputs(
             amount=item.price, 
             quantity=item.quantity_to_sync(),
             active=True,
-            currency_code=currency
+            currency_code=currency.value
         ) for item in grouped_items
     ]
     return batched(inputs, batch_size)
@@ -64,7 +64,7 @@ def update_listings_inputs(
         BatchUpdateInput(
             listing_id=listing_id,
             amount=item.price,
-            currency_code=currency,
+            currency_code=currency.value,
             expires_at=datetime(2024, 12, 30),
         )
         for item in items

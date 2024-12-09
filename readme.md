@@ -32,6 +32,60 @@ Direct mappings to StockX API endpoints through specialized interfaces:
 - `x_api_key` - API key for authentication
 - `refresh_token` - OAuth refresh token
 
+### Response models
+The SDK converts all JSON responses to typed Python frozen dataclasses, allowing for:
+- Type checking
+- Easy access to data using dot notation (e.g `listing.id`)
+- Automatic JSON serialization and deserialization
+- Pretty printing
+
+#### Responses as dataclasses with pretty print functionality
+
+```python
+>>> product_id = '16999d83-1c59-4913-ae9f-9a2b2ee9f1b3'
+>>> product = await stockx.catalog.get_product(product_id)
+>>> print(product)  # Pretty print
+Product:
+  product_id: 16999d83-1c59-4913-ae9f-9a2b2ee9f1b3
+  url_key: gucci-gg-supreme-monogram-apple-card-case-wallet-brown
+  style_id:
+  product_type: handbags
+  title: Gucci GG Supreme Monogram Apple Card Case Wallet Brown
+  brand: Gucci
+  product_attributes:
+    ProductAttributes:
+      gender: women
+      season: None
+      release_date: None
+      retail_price: None
+      colorway: None
+      color: Brown
+```
+
+#### Automatic type conversion
+
+```python
+>>> from datetime import datetime
+>>> from stockx import OrderStatusClosed
+>>> client = StockXAPIClient(...)
+>>> async with StockX(client) as stockx:
+...     # Get an order with status DIDNOTSHIP
+...     async for order in stockx.orders.get_orders_history(
+...         from_date=datetime(2024, 1, 1),
+...         to_date=datetime(2024, 12, 1),
+...         order_status=OrderStatusClosed.DIDNOTSHIP,
+...         limit=1,
+...         page_size=50
+...     ):
+...         print(f'Order Number: {order.number} (Type: {type(order.number).__name__})')
+...         print(f'Status: {order.status} (Type: {type(order.status).__name__})')
+...         print(f'Created At: {order.created_at} (Type: {type(order.created_at).__name__})')
+...
+Order Number: 68322683-68222442 (Type: str)
+Status: OrderStatusClosed.DIDNOTSHIP (Type: OrderStatusClosed)
+Created At: 2024-10-03 16:12:40+00:00 (Type: datetime) 
+```
+
 ### Helper Methods
 
 The SDK provides utility methods to simplify common operations.
@@ -40,14 +94,14 @@ The SDK provides utility methods to simplify common operations.
 The `operation_succeeded()` method polls the status of asynchronous listing operations:
 
 ```python
-# Create a new listing
+>>> # Create a new listing
 >>> operation = await stockx.listings.create_listing(
 ...     amount=100.0,
 ...     variant_id="123",
 ...     currency=Currency.EUR
 ... )
 
-# Wait for the operation to complete and check if it succeeded
+>>> # Wait for the operation to complete and check if it succeeded
 >>> if await stockx.listings.operation_succeeded(operation):
 ...     print("Listing created successfully!")
 ... else:

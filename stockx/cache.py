@@ -80,7 +80,7 @@ def cache_by(
     >>> async def get_product_market_data(
     ...     self, 
     ...     product_id: str, 
-    ...     currency_code: str
+    ...     currency: Currency
     ... ) -> list[MarketData]:
     ...     # Results will be cached based on the sku parameter
     ...     # Cached results will expire after ttl seconds

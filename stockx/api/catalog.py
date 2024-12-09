@@ -73,7 +73,7 @@ class Catalog(StockXAPIBase):
         -----
         Results are cached for 30 seconds.
         """
-        params = {'currencyCode': str(currency)}    
+        params = {'currencyCode': currency.value}    
         response = await self.client.get(
             f'/catalog/products/{product_id}/variants/{variant_id}/market-data',
             params=params
@@ -92,7 +92,7 @@ class Catalog(StockXAPIBase):
         -----
         Results are cached for 30 seconds.
         """
-        params = {'currencyCode': str(currency)}    
+        params = {'currencyCode': currency.value}    
         response = await self.client.get(
             f'/catalog/products/{product_id}/market-data', 
             params=params

@@ -17,7 +17,6 @@ CLIENT_SECRET = os.getenv('CLIENT_SECRET')
 X_API_KEY = os.getenv('X_API_KEY')
 REFRESH_TOKEN = os.getenv('REFRESH_TOKEN')
 
-
 async def main():
 
     client = StockXAPIClient(
@@ -28,14 +27,19 @@ async def main():
         client_secret=CLIENT_SECRET, 
         refresh_token=REFRESH_TOKEN
     )
-    
+    from stockx.models import OrderStatusClosed
+    from datetime import datetime
     async with StockX(client) as stockx:
-        from stockx.models import Currency
-        currency = Currency('USD')
-        print(currency)
-        # for _ in range(10):
-        #     af1_white = await search.product_by_sku(stockx, 'CW2288-111')
-        #     print(af1_white)
+        async for order in stockx.orders.get_orders_history(
+            from_date=datetime(2024, 1, 1),
+            to_date=datetime(2024, 12, 1),
+            order_status=OrderStatusClosed.DIDNOTSHIP,
+            limit=1,
+            page_size=50
+        ):
+            print(f'Order Number: {order.number} (Type: {type(order.number).__name__})')
+            print(f'Status: {order.status} (Type: {type(order.status).__name__})')
+            print(f'Created At: {order.created_at} (Type: {type(order.created_at).__name__})')
 
 
 
