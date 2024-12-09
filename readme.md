@@ -28,23 +28,91 @@ High-level abstractions for advanced business logic and inventory management:
 
 - `Inventory` - Optimized high-level interface for managing listings on StockX
 - `Item` / `ListedItem` - Abstraction aggregating multiple equal listings into a single inventory entry
-
-### Additional Tools
-
 - `mock_listing` - Create temporary listings for testing
 - `search` - Product search utilities
 
-### stockx.ext.inventory
+### stockx.ext.inventory.Inventory
 
 The `Inventory` class provides a high-level interface for managing listings on StockX.
 It optimizes performance by batching multiple updates together into single API calls. 
-When used as an async context manager, it automatically fetches current selling fees 
-and handles pending price and quantity changes on exit.
 
 Features:
 - Sell or de-list items in bulk
 - Set prices based on market data and custom conditions
-- Update item quantities and prices
+- Update item quantities and prices on context exit
+
+### Examples
+
+#### Update item prices and quantities easily
+
+```python
+>>> client = StockXAPIClient(...)
+>>> async with StockX(client) as stockx:
+...     async with Inventory(stockx) as inventory:
+...         # Get items listed for over 200 payout
+...         items = await (
+...             inventory.items()
+...             .filter(lambda item: item.payout() > 200)
+...             .all()
+...         )
+...         for item in items:
+...             item.price -= 20    # Reduce price by 20
+...             item.quantity += 1  # Increase quantity by 1
+...         # Changes are automatically applied when exiting context
+```
+
+#### Retrieve listed items by custom criteria
+
+```python
+>>> async with Inventory(stockx) as inventory:
+...     # Get all items with style ID 'L47450600'
+...     salomons_gtx = await inventory.items().filter_by(style_ids=['L47450600']).all()
+...
+...     print(salomons_gtx[0].style_id)
+...     print(salomons_gtx[0].name)
+...     print(salomons_gtx[0].size)
+...     print(f'${salomons_gtx[0].payout():.2f}')
+...     print(salomons_gtx[0].quantity)
+...
+L47450600
+Salomon XT-6 Gore-Tex Black Silver
+11.5
+$167.40
+3
+```
+
+#### Sell items
+
+```python
+>>> client = StockXAPIClient(...)
+>>> async with StockX(client) as stockx:
+...     async with Inventory(stockx) as inventory:
+...         # Create items from SKU and size (Air Force 1 '07 Triple White)
+...         af1_size_9 = await Item.from_sku_size(stockx, 'CW2288-111', 'US 9', 110.00)  
+...         af1_size_85 = await Item.from_sku_size(stockx, 'CW2288-111', 'US 8.5', 110.00)
+...         
+...         # Create listings
+...         listed_items = await inventory.sell([af1_size_9, af1_size_85])
+...         
+...         # Print results
+...         for item in listed_items:
+...             print(f'Expected payout: ${item.payout()}')
+...
+Expected payout: $89.80
+Expected payout: $89.80
+```
+
+#### Change prices dynamically
+
+```python
+>>> # Apply 10% discount to items with payout over 200
+>>> await inventory.change_price(
+...     items=items,
+...     new_price=lambda item: item.price * 0.9,
+...     condition=lambda item: item.payout() > 200
+... )
+```
+
 
 ## API Endpoint Mappings
 
