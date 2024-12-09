@@ -22,6 +22,38 @@ Direct mappings to StockX API endpoints through specialized interfaces:
 - 🔁 Automatic retries with exponential backoff for failed requests
 - ⚡ Response caching for invariant data (e.g., product details)
 
+### Configuration
+
+#### Client Parameters
+- `hostname` - StockX API hostname
+- `version` - API version to use
+- `client_id` - OAuth client ID
+- `client_secret` - OAuth client secret
+- `x_api_key` - API key for authentication
+- `refresh_token` - OAuth refresh token
+
+### Helper Methods
+
+The SDK provides utility methods to simplify common operations:
+
+#### Operation Status Polling
+The `operation_succeeded()` method polls the status of asynchronous listing operations:
+
+```python
+# Create a new listing
+>>> operation = await stockx.listings.create_listing(
+...     amount=100.0,
+...     variant_id="123",
+...     currency=Currency.EUR
+... )
+
+# Wait for the operation to complete and check if it succeeded
+>>> if await stockx.listings.operation_succeeded(operation):
+...     print("Listing created successfully!")
+... else:
+...     print(f"Listing creation failed: {operation.error}")
+```
+
 ## stockx.ext
 
 High-level abstractions for advanced business logic and inventory management:
@@ -101,7 +133,19 @@ $167.40
 Expected payout: $89.80
 Expected payout: $89.80
 ```
+### Advanced Usage Examples
 
+#### Custom filtering
+```python
+>>> # Get items with specific criteria
+>>> items = await (
+...     inventory.items()
+...     .filter_by(style_ids=['CW2288-111', 'L47450600'])
+...     .filter(lambda item: item.payout() > 150)
+...     .filter(lambda item: item.quantity > 5)
+...     .all()
+... )
+```
 #### Change prices dynamically by injecting user-defined functions
 Using functions:
 ```python
@@ -160,7 +204,8 @@ Results are cached indefinitely to reduce the number of requests to the API.
 ```python
 >>> product = await product_by_sku(stockx, 'CW2288-111')
 >>> print(product.name)
-Air Force 1 '07 Triple White
+Nike Air Force 1 '07 Triple White
+
 >>> product = await product_by_sku(stockx, 'JABBERWOCKY')
 >>> print(product)
 None
@@ -197,3 +242,5 @@ None
 | GET | `/selling/orders/{id}` | `Orders.get_order()` |
 | GET | `/selling/orders/history` | `Orders.get_orders_history()` |
 | GET | `/selling/orders/active` | `Orders.get_active_orders()` |
+
+
