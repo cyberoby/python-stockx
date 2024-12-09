@@ -18,29 +18,40 @@ Direct mappings to StockX API endpoints through specialized interfaces:
 
 ### High-Level Abstractions 
 
-- `Inventory` - Optimized inventory management with batched operations
-- `Item`/`ListedItem` - Product variant aggregation for simplified inventory tracking
-- `ItemsQuery` - Fluent query builder for filtering inventory items
+- `Inventory` - Optimized high-level interface for managing listings on StockX
+- `Item` / `ListedItem` - Abstraction aggregating multiple equal listings into a single inventory entry
 
 ### Additional Tools
 
 - `mock_listing` - Create temporary listings for testing
-- `search` - Product search utilities by SKU and URL
+- `search` - Product search utilities
 
 ## API Endpoint Mappings
 
-| Endpoint | Method | SDK Function |
-|----------|--------|--------------|
-| `/catalog/products/{id}` | GET | `stockx.catalog.get_product()` |
-| `/catalog/products/{id}/variants/{id}/market-data` | GET | `stockx.catalog.get_variant_market_data()` |
-| `/catalog/search` | GET | `stockx.catalog.search_catalog()` |
-| `/selling/listings/{id}` | GET | `stockx.listings.get_listing()` |
-| `/selling/listings` | POST | `stockx.listings.create_listing()` |
-| `/selling/listings/{id}` | DELETE | `stockx.listings.delete_listing()` |
-| `/selling/batch/create-listing` | POST | `stockx.batch.create_listings()` |
-| `/selling/batch/update-listing` | POST | `stockx.batch.update_listings()` |
-| `/selling/batch/delete-listing` | POST | `stockx.batch.delete_listings()` |
-| `/selling/orders/{id}` | GET | `stockx.orders.get_order()` |
+| Method | Endpoint | SDK Function |
+|--------|----------|--------------|
+| GET | `/catalog/products/{id}` | `Catalog.get_product()` |
+| GET | `/catalog/products/{id}/variants` | `Catalog.get_all_product_variants()` |
+| GET | `/catalog/products/{id}/variants/{id}/market-data` | `Catalog.get_variant_market_data()` |
+| GET | `/catalog/products/{id}/market-data` | `Catalog.get_product_market_data()` |
+| GET | `/catalog/search` | `Catalog.search_catalog()` |
+| GET | `/selling/listings/{id}` | `Listings.get_listing()` |
+| POST | `/selling/listings` | `Listings.create_listing()` |
+| DELETE | `/selling/listings/{id}` | `Listings.delete_listing()` |
+| GET | `/selling/listings/{id}/operations/{id}` | `Listings.get_listing_operation()` |
+| GET | `/selling/listings/{id}/operations` | `Listings.get_all_listing_operations()` |
+| POST | `/selling/batch/create-listing` | `Batch.create_listings()` |
+| GET | `/selling/batch/create-listing/{id}` | `Batch.create_listings_status()` |
+| GET | `/selling/batch/create-listing/{id}/items` | `Batch.create_listings_items()` |
+| POST | `/selling/batch/update-listing` | `Batch.update_listings()` |
+| GET | `/selling/batch/update-listing/{id}` | `Batch.update_listings_status()` |
+| GET | `/selling/batch/update-listing/{id}/items` | `Batch.update_listings_items()` |
+| POST | `/selling/batch/delete-listing` | `Batch.delete_listings()` |
+| GET | `/selling/batch/delete-listing/{id}` | `Batch.delete_listings_status()` |
+| GET | `/selling/batch/delete-listing/{id}/items` | `Batch.delete_listings_items()` |
+| GET | `/selling/orders/{id}` | `Orders.get_order()` |
+| GET | `/selling/orders/history` | `Orders.get_orders_history()` |
+| GET | `/selling/orders/active` | `Orders.get_active_orders()` |
 
 ## High-Level Abstractions
 
