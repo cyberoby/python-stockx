@@ -10,7 +10,7 @@ from ...errors import (
     stockx_request_error,
 )
 from ...models import Response
-from ...types import JSON, Params
+from ...types_ import JSON, Params
 
 
 GRANT_TYPE = 'refresh_token'

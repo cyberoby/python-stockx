@@ -2,7 +2,7 @@ from math import ceil
 from typing import AsyncIterator
 
 from .client import StockXAPIClient
-from ..types import JSON, Params
+from ..types_ import JSON, Params
 
 
 class StockXAPIBase:

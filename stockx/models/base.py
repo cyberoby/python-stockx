@@ -10,7 +10,7 @@ from typing import (
 )
 
 from ..format import pretty_str
-from ..types import JSON
+from ..types_ import JSON
 
 
 @pretty_str

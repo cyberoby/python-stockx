@@ -6,7 +6,7 @@ from datetime import datetime
 from .base import StockXBaseModel
 from .currency import Currency
 from ..format import iso
-from ..types import JSON
+from ..types_ import JSON
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,7 +29,7 @@ class BatchStatus(StockXBaseModel):
     created_at: datetime
     updated_at: datetime | None = None
     completed_at: datetime | None = None
-    item_statuses: BatchItemStatuses
+    item_statuses: BatchItemStatuses | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -145,12 +145,12 @@ class BatchCreateInput(StockXBaseModel):
 
     def to_json(self) -> JSON:
         return {
-            "variantId": self.variant_id,
-            "quantity": int(self.quantity),
-            "amount": str(int(self.amount)),
-            "expiresAt": iso(self.expires_at),
-            "currencyCode": self.currency_code.value if self.currency_code else None,
-            "active": self.active,
+            'variantId': self.variant_id,
+            'quantity': int(self.quantity),
+            'amount': str(int(self.amount)),
+            'expiresAt': iso(self.expires_at),
+            'currencyCode': self.currency_code.value if self.currency_code else None,
+            'active': self.active,
         }
 
 
@@ -178,11 +178,11 @@ class BatchUpdateInput(StockXBaseModel):
 
     def to_json(self) -> JSON:
         return {
-            "listingId": self.listing_id,
-            "amount": str(int(self.amount)),
-            "expiresAt": iso(self.expires_at),
-            "currencyCode": self.currency_code.value if self.currency_code else None,
-            "active": self.active,
+            'listingId': self.listing_id,
+            'amount': str(int(self.amount)),
+            'expiresAt': iso(self.expires_at),
+            'currencyCode': self.currency_code.value if self.currency_code else None,
+            'active': self.active,
         }
 
 

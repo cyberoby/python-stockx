@@ -20,7 +20,7 @@ from ...api import StockX
 from ...errors import StockXIncompleteOperation
 from ...logging import logger
 from ...models import Currency
-from ...types import ComputedValue, computed_value
+from ...types_ import ComputedValue, computed_value
 
 if TYPE_CHECKING:
     from .market import ItemMarketData, MarketValue
