@@ -9,13 +9,20 @@ from collections.abc import (
 from typing import TypeVar
 
 
-JSONPrimitive = str | int | float | bool | None
+__all__ = (
+    'Params',
+    'JSON',
+    'ComputedValue',
+    'computed_value',
+)
+
+_JSONPrimitive = str | int | float | bool | None
 """Type alias for JSON primitive values."""
 
-Params = Mapping[str, JSONPrimitive]
+Params = Mapping[str, _JSONPrimitive]
 """Type alias for parameter mappings with JSON primitive values."""
 
-type JSON = Mapping[str, JSONPrimitive | Sequence[JSONPrimitive] | JSON]
+type JSON = Mapping[str, _JSONPrimitive | Sequence[_JSONPrimitive] | JSON]
 """Type alias for JSON-like structures."""
 
 

@@ -1,4 +1,5 @@
-from .base import StockXBaseModel
+"""StockX objects models."""
+
 from .batch import (
     BatchCreateInput,
     BatchCreateResult,
@@ -35,4 +36,39 @@ from .sales import (
     OrderStatusClosed,
     Payout,
     Shipment,
+)
+
+
+__all__ = (
+    'Adjustments',
+    'AuthenticationDetails',
+    'BatchCreateInput',
+    'BatchCreateResult',
+    'BatchDeleteInput',
+    'BatchDeleteResult',
+    'BatchItemResult',
+    'BatchItemStatuses',
+    'BatchStatus',
+    'BatchUpdateInput',
+    'BatchUpdateResult',
+    'Currency',
+    'Listing',
+    'ListingDetail',
+    'ListingStatus',
+    'MarketData',
+    'Operation',
+    'OperationStatus',
+    'Order',
+    'OrderDetail',
+    'OrderShort',
+    'OrderStatusActive',
+    'OrderStatusClosed',
+    'Payout',
+    'Product',
+    'ProductAttributes',
+    'ProductShort',
+    'Response',
+    'Shipment',
+    'Variant',
+    'VariantShort'
 )
