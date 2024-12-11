@@ -6,8 +6,7 @@ with open('README.md', 'r', encoding='utf-8') as f:
 setup(
     name='python-stockx',
     version='0.1.0',
-    package_dir={'': 'stockx'},
-    packages=find_packages(where='stockx'),
+    packages=find_packages(),
     description='An async Python SDK for interacting with the StockX API',
     long_description=long_description,
     long_description_content_type='text/markdown',
