@@ -4,12 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 import stockx
-from stockx.ext.inventory import (
-    Inventory, 
-    Item, 
-    ListedItem,
-    UpdateResult,
-)   
+from stockx.ext.inventory import Item, UpdateResult
 
 
 class MockCatalog:
