@@ -111,7 +111,7 @@ class Inventory:
         await self.load()
         return self
     
-    async def __aexit__(self, exc_type, exc_value, traceback):
+    async def __aexit__(self, exc_type, exc_value, traceback) -> bool:
         try:
             results = await self.update()
             logger.info(f'Successfully updated {len(results)} items on exit.')

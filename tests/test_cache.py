@@ -15,33 +15,28 @@ async def test_cache_decorator() -> None:
         calls += 1
         return param1, param2
 
-    # First call should hit the function
     result1 = await cached_func('test', 123)
     assert result1 == ('test', 123)
-    assert calls == 1
+    assert calls == 1, 'First call should hit the function'
     
-    # Second call with same params should use cache
     result2 = await cached_func('test', 123)
     assert result2 == ('test', 123)
-    assert calls == 1
+    assert calls == 1, 'Second call with same params should use cache'
     
-    # Different params should hit function again
     result3 = await cached_func('test2', 456)
     assert result3 == ('test2', 456)
-    assert calls == 2
+    assert calls == 2, 'Different params should hit function again'
 
     result4 = await cached_func('test3', 789)
     assert result4 == ('test3', 789)
-    assert calls == 3
+    assert calls == 3, 'Different params should hit function again'
 
-    # Remove oldest item when max size is reached
     result5 = await cached_func('test', 123)
     assert result5 == ('test', 123)
-    assert calls == 4
+    assert calls == 4, 'Oldest item should be removed when max size is reached'
 
-    # Cache should be expired after ttl
     await asyncio.sleep(1.1)
     result6 = await cached_func('test', 123)
     assert result6 == ('test', 123)
-    assert calls == 5
+    assert calls == 5, 'Cache should be expired after ttl'
 
