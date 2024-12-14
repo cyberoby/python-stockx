@@ -265,7 +265,7 @@ class OperationStatus(Enum):
     Parameters
     ----------
     value : `str`
-        The status code string
+        The operation status code
     """
     PENDING = 'PENDING'
     SUCCEEDED = 'SUCCEEDED'
@@ -283,6 +283,11 @@ class OperationType(Enum):
     `CANCEL_ORDER`
     `RECLAIM`
     `CANCEL_RECLAIM`
+
+    Parameters
+    ----------
+    value : `str`
+        The operation type code
     """
     CREATE = 'CREATE'
     UPDATE = 'UPDATE'
@@ -299,6 +304,11 @@ class OperationInitiatedBy(Enum):
 
     `SYSTEM`
     `USER`
+
+    Parameters
+    ----------
+    value : `str`
+        The operation initiated by code
     """
     SYSTEM = 'SYSTEM'
     USER = 'USER'
@@ -315,6 +325,11 @@ class OperationInitiatedVia(Enum):
     `SHOPIFY`
     `PUBLIC-API`
     `INTERNAL-SYSTEM`
+
+    Parameters
+    ----------
+    value : `str`
+        The operation initiated via code
     """
     IOS = 'IOS'
     ANDROID = 'ANDROID'
@@ -399,6 +414,11 @@ class ListingStatus(Enum):
     `MATCHED`
     `COMPLETED`
     `DELETED`
+
+    Parameters
+    ----------
+    value : `str`
+        The listing status code
     """
     ACTIVE = 'ACTIVE'
     INACTIVE = 'INACTIVE'
@@ -413,6 +433,11 @@ class InventoryType(Enum):
 
     `STANDARD`
     `FLEX`
+
+    Parameters
+    ----------
+    value : `str`
+        The inventory type code
     """
     STANDARD = 'STANDARD'
     FLEX = 'FLEX'
