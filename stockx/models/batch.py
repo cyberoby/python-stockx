@@ -2,11 +2,24 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 
 from .base import StockXBaseModel
 from .currency import Currency
 from ..format import iso
 from ..types_ import JSON
+
+
+class BatchOperationStatus(Enum):
+    """Batch operation status codes.
+
+    `QUEUED`
+    `IN_PROGRESS`
+    `COMPLETED`
+    """
+    QUEUED = 'QUEUED'
+    IN_PROGRESS = 'IN_PROGRESS'
+    COMPLETED = 'COMPLETED'
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,7 +37,7 @@ class BatchStatus(StockXBaseModel):
     item_statuses : `BatchItemStatuses` | `None`
     """
     batch_id: str
-    status: str
+    status: BatchOperationStatus
     total_items: int
     created_at: datetime
     updated_at: datetime | None = None
@@ -47,6 +60,18 @@ class BatchItemStatuses(StockXBaseModel):
     failed: int = 0
 
 
+class BatchItemStatus(Enum):
+    """Batch item status codes.
+
+    `QUEUED`
+    `COMPLETED`
+    `FAILED`
+    """
+    QUEUED = 'QUEUED'
+    COMPLETED = 'COMPLETED'
+    FAILED = 'FAILED'
+
+
 @dataclass(frozen=True, slots=True)
 class BatchResultBase(StockXBaseModel):
     """Base class for batch operation results.
@@ -63,7 +88,7 @@ class BatchResultBase(StockXBaseModel):
     listing_id : `str` | `None`
     """
     item_id: str
-    status: str
+    status: BatchItemStatus
     result: BatchItemResult | None = None
     error: str = ""
 
@@ -144,7 +169,7 @@ class BatchCreateInput(StockXBaseModel):
     expires_at: datetime | None = None
 
     def to_json(self) -> JSON:
-        return {
+        data = {
             'variantId': self.variant_id,
             'quantity': int(self.quantity),
             'amount': str(int(self.amount)),
@@ -152,6 +177,7 @@ class BatchCreateInput(StockXBaseModel):
             'currencyCode': self.currency_code.value if self.currency_code else None,
             'active': self.active,
         }
+        return {key: value for key, value in data.items() if value is not None}
 
 
 @dataclass(frozen=True, slots=True)
@@ -177,13 +203,14 @@ class BatchUpdateInput(StockXBaseModel):
     amount: float | None = None
 
     def to_json(self) -> JSON:
-        return {
+        data = {
             'listingId': self.listing_id,
             'amount': str(int(self.amount)),
             'expiresAt': iso(self.expires_at),
             'currencyCode': self.currency_code.value if self.currency_code else None,
             'active': self.active,
         }
+        return {key: value for key, value in data.items() if value is not None}
 
 
 @dataclass(frozen=True, slots=True)

@@ -8,6 +8,8 @@ from collections.abc import (
 from .base import StockXAPIBase
 from ..errors import StockXBatchTimeout
 from ..models import (
+    BatchItemStatus,
+    BatchOperationStatus,
     BatchStatus,
     BatchCreateResult,
     BatchDeleteResult,
@@ -46,10 +48,10 @@ class Batch(StockXAPIBase):
             self,
             batch_id: str,
             *,
-            status: str | None = None,
+            status: BatchItemStatus | None = None,
     ) -> list[BatchCreateResult]:
         """Get item-level results for items in a batch create operation."""
-        params = {'status': status}
+        params = {'status': status.value if status else None}
         response = await self.client.get(
             endpoint=f'/selling/batch/create-listing/{batch_id}/items',
             params=params,
@@ -97,10 +99,10 @@ class Batch(StockXAPIBase):
             self,
             batch_id: str,
             *,
-            status: str | None = None,
+            status: BatchItemStatus | None = None,
     ) -> list[BatchDeleteResult]:
         """Get item-level results for items in a batch delete operation."""
-        params = {'status': status}
+        params = {'status': status.value if status else None}
         response = await self.client.get(
             endpoint=f'/selling/batch/delete-listing/{batch_id}/items',
             params=params,
@@ -148,10 +150,10 @@ class Batch(StockXAPIBase):
             self,
             batch_id: str,
             *,
-            status: str | None = None,
+            status: BatchItemStatus | None = None,
     ) -> list[BatchUpdateResult]:
         """Get item-level results for items in a batch update operation."""
-        params = {'status': status}
+        params = {'status': status.value if status else None}
         response = await self.client.get(
             endpoint=f'/selling/batch/update-listing/{batch_id}/items',
             params=params,
@@ -204,11 +206,7 @@ async def batch_completed(
 
         for batch_id in queued_batch_ids:
             status = await get_batch_status(batch_id)
-            if (
-                status.item_statuses.completed
-                + status.item_statuses.failed
-                == status.total_items
-            ):
+            if status.status == BatchOperationStatus.COMPLETED:
                 finished_batch_ids.add(batch_id)
 
         queued_batch_ids.difference_update(finished_batch_ids)

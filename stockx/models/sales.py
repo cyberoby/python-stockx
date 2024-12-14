@@ -1,12 +1,15 @@
 from __future__ import annotations
-from dataclasses import dataclass, field
+
+from dataclasses import FrozenInstanceError, dataclass, field
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 from .base import StockXBaseModel
 from .currency import Currency
 from .products import ProductShort, VariantShort
-    
+from ..format import pretty_str
+
 
 @dataclass(frozen=True, slots=True)
 class Shipment(StockXBaseModel):
@@ -179,7 +182,7 @@ class Order(StockXBaseModel):
     order_number: str
     listing_id: str
     amount: float
-    status: OrderStatusActive | OrderStatusClosed
+    status: OrderStatusActive | OrderStatusClosed | str
     currency_code: Currency
     product: ProductShort
     variant: VariantShort
@@ -269,6 +272,83 @@ class OperationStatus(Enum):
     FAILED = 'FAILED'
 
 
+class OperationType(Enum):
+    """Operation type codes.
+
+    `CREATE`
+    `UPDATE`
+    `DELETE`
+    `ACTIVATE`
+    `DEACTIVATE`
+    `CANCEL_ORDER`
+    `RECLAIM`
+    `CANCEL_RECLAIM`
+    """
+    CREATE = 'CREATE'
+    UPDATE = 'UPDATE'
+    DELETE = 'DELETE'
+    ACTIVATE = 'ACTIVATE'
+    DEACTIVATE = 'DEACTIVATE'
+    CANCEL_ORDER = 'CANCEL_ORDER'
+    RECLAIM = 'RECLAIM'
+    CANCEL_RECLAIM = 'CANCEL_RECLAIM'
+
+
+class OperationInitiatedBy(Enum):
+    """Operation initiated by codes.
+
+    `SYSTEM`
+    `USER`
+    """
+    SYSTEM = 'SYSTEM'
+    USER = 'USER'
+
+
+class OperationInitiatedVia(Enum):
+    """Operation initiated via codes.
+
+    `IOS`
+    `ANDROID` 
+    `WEB`
+    `STOCKX-PRO`
+    `SCOUT`
+    `SHOPIFY`
+    `PUBLIC-API`
+    `INTERNAL-SYSTEM`
+    """
+    IOS = 'IOS'
+    ANDROID = 'ANDROID'
+    WEB = 'WEB'
+    STOCKX_PRO = 'STOCKX-PRO'
+    SCOUT = 'SCOUT'
+    SHOPIFY = 'SHOPIFY'
+    PUBLIC_API = 'PUBLIC-API'
+    INTERNAL_SYSTEM = 'INTERNAL-SYSTEM'
+
+from dataclasses import replace
+
+@pretty_str
+@dataclass(init=False, frozen=True, slots=True)
+class Changes:
+    """Changes made to the listing.
+
+    Parameters
+    ----------
+    additions: `dict[str, Any]`
+    updates: `dict[str, Any]`
+    removals: `dict[str, Any]`
+    """
+    additions: dict[str, Any]
+    updates: dict[str, Any]
+    removals: dict[str, Any]
+
+    def __init__(self, changes: dict[str, Any]) -> None:
+        # Use object.__setattr__ to bypass the frozen instance check
+        object.__setattr__(self, 'additions', changes.get('additions', {}))
+        object.__setattr__(self, 'updates', changes.get('updates', {}))
+        object.__setattr__(self, 'removals', changes.get('removals', {}))
+
+
 @dataclass(frozen=True, slots=True)
 class Operation(StockXBaseModel):
     """Listing operation.
@@ -277,10 +357,10 @@ class Operation(StockXBaseModel):
     ----------
     listing_id : `str`
     operation_id : `str`
-    operation_type : `str`
-    operation_status : `OperationStatus` | `None`
-    operation_initiated_by : `str`
-    operation_initiated_via : `str`
+    operation_type : `OperationType`
+    operation_status : `OperationStatus`
+    operation_initiated_by : `OperationInitiatedBy`
+    operation_initiated_via : `OperationInitiatedVia`
     created_at : `datetime` | `None`
     updated_at : `datetime` | `None`
     error : `str` | `None`
@@ -288,27 +368,26 @@ class Operation(StockXBaseModel):
     Attributes
     ----------
     id : `str`
-    status : `OperationStatus` | `None`
+    status : `OperationStatus`
     """
-    listing_id: str = ''
-    operation_id: str = ''
-    operation_type: str = ''
-    operation_status: OperationStatus | None = None
-    operation_initiated_by: str = ''
-    operation_initiated_via: str = ''
+    listing_id: str
+    operation_id: str
+    operation_type: OperationType
+    operation_status: OperationStatus
+    operation_initiated_by: OperationInitiatedBy
+    operation_initiated_via: OperationInitiatedVia
     created_at: datetime | None = None
     updated_at: datetime | None = None
     error: str | None = None
+    changes: Changes | None = None
 
     @property
     def id(self) -> str:
         return self.operation_id
     
     @property
-    def status(self) -> OperationStatus | None:
+    def status(self) -> OperationStatus:
         return self.operation_status
-    
-    # TODO: changes
 
 
 class ListingStatus(Enum):
@@ -319,17 +398,24 @@ class ListingStatus(Enum):
     `CANCELED`
     `MATCHED`
     `COMPLETED`
-
-    Parameters
-    ----------
-    value : `str`
-        The listing status code
+    `DELETED`
     """
     ACTIVE = 'ACTIVE'
     INACTIVE = 'INACTIVE'
     CANCELED = 'CANCELED'
     MATCHED = 'MATCHED'
     COMPLETED = 'COMPLETED'
+    DELETED = 'DELETED'
+
+
+class InventoryType(Enum):
+    """Inventory type codes.
+
+    `STANDARD`
+    `FLEX`
+    """
+    STANDARD = 'STANDARD'
+    FLEX = 'FLEX'
 
 
 @dataclass(frozen=True, slots=True)
@@ -362,7 +448,7 @@ class Listing(StockXBaseModel):
     currency_code: Currency
     product: ProductShort
     variant: VariantShort
-    inventory_type: str = ''
+    inventory_type: InventoryType
     order: OrderShort | None = None
     authentication_details: AuthenticationDetails | None = None
     created_at: datetime | None = None

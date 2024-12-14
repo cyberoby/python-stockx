@@ -83,7 +83,7 @@ def _convert(value, type_hint):
         for type_ in types:
             try:
                 return _convert(value, type_)
-            except (ValueError, TypeError): # Enum / model validation failed
+            except (ValueError, TypeError) as e: # Enum / model validation failed
                 continue    # Try the next type
         return None
         

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
     
 from .item import ListedItem
 from ...filter import Filter
-from ...models import Listing
+from ...models import Listing, ListingStatus
 
 if TYPE_CHECKING:
     from .inventory import Inventory
@@ -106,7 +106,7 @@ class ItemsQuery:
             self._inventory.stockx.listings.get_all_listings(
                 product_ids=product_ids,
                 variant_ids=variant_ids,
-                listing_statuses=['ACTIVE', 'INACTIVE'], 
+                listing_statuses=[ListingStatus.ACTIVE], 
                 page_size=100,
             )
         )

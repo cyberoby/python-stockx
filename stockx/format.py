@@ -44,7 +44,7 @@ def pretty_str(cls: type) -> type:
                 return f'\n{value.__str__(level + 1)}'
             elif (
                 isinstance(value, Iterable) 
-                and not isinstance(value, (str, bytes, bytearray))
+                and not isinstance(value, (str, bytes, bytearray, dict))
             ):
                 # Increase the indentation level and join the items
                 return f', '.join(format(item, level + 1) for item in value)
