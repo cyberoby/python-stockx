@@ -5,6 +5,7 @@ from dataclasses import (
     is_dataclass,
 )
 from datetime import datetime
+from typing import TypeVar
 
 
 def iso(datetime: datetime | None) -> str | None:
@@ -24,7 +25,9 @@ def iso_date(datetime: datetime | None) -> str | None:
     return datetime.strftime('%Y-%m-%d') if datetime else None
 
 
-def pretty_str(cls: type) -> type:
+T = TypeVar('T')
+
+def pretty_str(cls: type[T]) -> type[T]:
     """Decorator that adds pretty-printing functionality to a dataclass."""
 
     if not is_dataclass(cls):
