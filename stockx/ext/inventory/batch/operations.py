@@ -1,10 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import (
-    Callable, 
-    Iterable, 
-    Iterator,
-)
+from collections.abc import Callable, Iterable
 from itertools import chain
 from typing import TYPE_CHECKING
 
@@ -26,13 +22,14 @@ if TYPE_CHECKING:
         BatchCreateResult,
         BatchUpdateResult,
         BatchDeleteResult,
+        Currency,
     )
 
 
 async def update_quantity(
         stockx: StockX, 
         items: Iterable[ListedItem],
-) -> Iterator[UpdateResult]:
+) -> list[UpdateResult]:
     """Update listing quantities by creating or deleting listings as needed.
     
     Parameters
@@ -44,7 +41,7 @@ async def update_quantity(
         
     Returns
     -------
-    `Iterator[UpdateResult]`
+    `list[UpdateResult]`
         Results of the update operation for each item
         
     Raises
@@ -109,25 +106,31 @@ async def update_quantity(
             in increased_results if result.item == item
         )
 
+    results = list(chain(decreased_results, increased_results))
+
     if timed_out_batch_ids:
         raise StockXIncompleteOperation(
             'Update quantity operation timed out. Partial results available.', 
-            partial_results=chain(decreased_results, increased_results), 
+            partial_results=results, 
             timed_out_batch_ids=timed_out_batch_ids
         )
 
-    return chain(decreased_results, increased_results)
+    return results
 
 
 async def _create_listings(
         stockx: StockX,
         items: Iterable[Item | ListedItem],
         inputs_factory: Callable[..., Iterable[Iterable[BatchCreateInput]]],
+        currency: Currency | None = None,
         timeout: int = 60,
-) -> Iterator[UpdateResult]:
+) -> list[UpdateResult]:
     """Create listings in batches using the provided inputs factory."""
+    if items and not currency:
+        currency = list(items)[0].currency
+
     batch_ids = []
-    for inputs in inputs_factory(items, 'EUR', 100):
+    for inputs in inputs_factory(items, currency, 100):
         batch_status = await stockx.batch.create_listings(inputs)
         batch_ids.append(batch_status.batch_id)
 
@@ -138,7 +141,8 @@ async def _create_listings(
             func=publish_listings, 
             timeout=timeout
         )
-        return UpdateResult.from_batch_create(items, create_results)
+        results = UpdateResult.from_batch_create(items, create_results)
+        return list(results)
     except StockXBatchTimeout as e:
         partial_results = UpdateResult.from_batch_create(
             items=items,
@@ -146,7 +150,7 @@ async def _create_listings(
         )
         raise StockXIncompleteOperation(
             'Batch create operation timed out. Partial results available.', 
-            partial_results=partial_results, 
+            partial_results=list(partial_results), 
             timed_out_batch_ids=e.queued_batch_ids
         )
     
@@ -155,16 +159,22 @@ async def increase_listings(
         stockx: StockX,
         items: Iterable[ListedItem],
         timeout: int = 60,
-) -> Iterator[UpdateResult]:
+) -> list[UpdateResult]:
     """Bulk create additional listings for items that need increased quantity."""
-    return await _create_listings(stockx, items, sync_listings_inputs, timeout)
+    return await _create_listings(
+        stockx=stockx, 
+        items=items, 
+        inputs_factory=sync_listings_inputs, 
+        timeout=timeout
+    )
 
 
 async def publish_listings(
         stockx: StockX,
         items: Iterable[Item],
+        currency: Currency,
         timeout: int = 60,
-) -> Iterator[UpdateResult]:
+) -> list[UpdateResult]:
     """Bulk create new listings for items that haven't been listed yet.
     
     Parameters
@@ -173,12 +183,14 @@ async def publish_listings(
         StockX API interface
     items : `Iterable[Item]`
         Items to create listings for
+    currency : `Currency`
+        Currency to publish listings in
     timeout : `int`, default 60
         Maximum time to wait for batch operations to complete
         
     Returns
     -------
-    `Iterator[UpdateResult]`
+    `list[UpdateResult]`
         Results of the create operation for each item
         
     Raises
@@ -187,14 +199,20 @@ async def publish_listings(
         If some batch operations timeout. The exception contains partial 
         results for operations that completed successfully.
     """
-    return await _create_listings(stockx, items, create_listings_inputs, timeout)
+    return await _create_listings(
+        stockx=stockx, 
+        items=items, 
+        inputs_factory=create_listings_inputs, 
+        currency=currency,
+        timeout=timeout
+    )
 
 
 async def update_listings(
         stockx: StockX,
         items: Iterable[ListedItem],
         timeout: int = 60,
-) -> Iterator[UpdateResult]:
+) -> list[UpdateResult]:
     """Bulk update existing listings with new prices.
     
     Parameters
@@ -208,7 +226,7 @@ async def update_listings(
         
     Returns
     -------
-    `Iterator[UpdateResult]`
+    `list[UpdateResult]`
         Results of the update operation for each item
         
     Raises
@@ -218,7 +236,7 @@ async def update_listings(
         results for operations that completed successfully.
     """
     batch_ids = []
-    for inputs in update_listings_inputs(items, 'EUR', 100):
+    for inputs in update_listings_inputs(items, 100):
         batch_status = await stockx.batch.update_listings(inputs)
         batch_ids.append(batch_status.batch_id)
 
@@ -229,7 +247,8 @@ async def update_listings(
             func=update_listings, 
             timeout=timeout
         )
-        return UpdateResult.from_batch_update(items, update_results)
+        results = UpdateResult.from_batch_update(items, update_results)
+        return list(results)
     except StockXBatchTimeout as e:
         partial_results = UpdateResult.from_batch_update(
             items=items,
@@ -237,7 +256,7 @@ async def update_listings(
         )
         raise StockXIncompleteOperation(
             'Batch update operation timed out. Partial results available.', 
-            partial_results=partial_results, 
+            partial_results=list(partial_results), 
             timed_out_batch_ids=e.queued_batch_ids
         )
 
@@ -288,7 +307,7 @@ async def delete_listings(
         )
         raise StockXIncompleteOperation(
             'Batch delete operation timed out. Partial results available.', 
-            partial_results=partial_results, 
+            partial_results=[partial_results], 
             timed_out_batch_ids=e.queued_batch_ids
         )
 

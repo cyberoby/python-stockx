@@ -31,7 +31,7 @@ def create_listings_inputs(
             amount=item.price, 
             quantity=item.quantity,
             active=True,
-            currency_code=currency.value
+            currency_code=currency
         ) for item in grouped_items
     ]
     return batched(inputs, batch_size)
@@ -39,7 +39,7 @@ def create_listings_inputs(
 
 def sync_listings_inputs(
         items: Iterable[ListedItem], 
-        currency: Currency, 
+        currency: Currency,
         batch_size: int
 ) -> Iterator[tuple[BatchCreateInput, ...]]:
     """Create batch input items for syncing listing quantities.
@@ -58,8 +58,7 @@ def sync_listings_inputs(
             variant_id=item.variant_id, 
             amount=item.price, 
             quantity=item.quantity_to_sync(),
-            active=True,
-            currency_code=currency.value
+            currency_code=currency
         ) for item in grouped_items
     ]
     return batched(inputs, batch_size)
@@ -67,7 +66,6 @@ def sync_listings_inputs(
 
 def update_listings_inputs(
         items: Iterable[ListedItem], 
-        currency: Currency, 
         batch_size: int
 ) -> Iterator[tuple[BatchUpdateInput, ...]]:
     """Create batch input items for updating existing listings."""
@@ -75,8 +73,7 @@ def update_listings_inputs(
         BatchUpdateInput(
             listing_id=listing_id,
             amount=item.price,
-            currency_code=currency.value,
-            active=True,
+            currency_code=item.currency,
         )
         for item in items
         for listing_id in item.listing_ids

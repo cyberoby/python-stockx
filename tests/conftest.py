@@ -127,7 +127,7 @@ def item():
 
 @pytest.fixture
 def mock_publish_listings():
-    async def mock_publish_listings(stockx, items):
+    async def mock_publish_listings(stockx, items, currency):
         return [
             UpdateResult(item, created=['new-listing-id-1', 'new-listing-id-2'])
             for item in items

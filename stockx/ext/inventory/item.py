@@ -9,7 +9,7 @@ from ...models import Listing
 if TYPE_CHECKING:
     from .inventory import Inventory
     from ...api import StockX
-
+    from ...models import Currency
 
 class Item:
     """
@@ -295,6 +295,11 @@ class ListedItem:
         """The product name (if available)."""
         return self._name
     
+    @property
+    def currency(self) -> Currency:
+        """The currency of the item."""
+        return self._inventory.currency
+    
     def quantity_to_sync(self) -> int:
         """
         Number of listings to publish (if positive) or delete (if negative).
@@ -324,6 +329,7 @@ class ListedItem:
             f'  style_id: {self.style_id}\n'
             f'  size: {self.size}\n'
             f'  name: {self.name}\n'
-            f'  listing_ids: {', '.join(self.listing_ids)}'
+            f'  listing_ids: {', '.join(self.listing_ids)}\n'
+            f'  currency: {self.currency.value}'
         )
 

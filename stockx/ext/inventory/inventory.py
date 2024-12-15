@@ -123,6 +123,7 @@ class Inventory:
             return True
         except Exception as e:
             logger.error(f'Error during Inventory exit: {e}')
+            raise e
             return False 
         return False
 
@@ -242,16 +243,8 @@ class Inventory:
         price_results = []
         timed_out_batch_ids = [] 
 
-        if self._quantity_updates:
-            try:
-                quantity_results = await update_quantity(
-                    stockx=self.stockx, 
-                    items=self._quantity_updates
-                )
-            except StockXIncompleteOperation as e:
-                quantity_results = e.partial_results
-                timed_out_batch_ids += e.timed_out_batch_ids
-
+        # Perform price updates before quantity updates
+        # to avoid updating quantities with old prices
         if self._price_updates:
             try:
                 price_results = await update_listings(
@@ -260,6 +253,16 @@ class Inventory:
                 )
             except StockXIncompleteOperation as e:
                 price_results = e.partial_results
+                timed_out_batch_ids += e.timed_out_batch_ids
+
+        if self._quantity_updates:
+            try:
+                quantity_results = await update_quantity(
+                    stockx=self.stockx, 
+                    items=self._quantity_updates
+                )
+            except StockXIncompleteOperation as e:
+                quantity_results = e.partial_results
                 timed_out_batch_ids += e.timed_out_batch_ids
 
         self._price_updates.clear()
@@ -310,7 +313,7 @@ class Inventory:
         Expected payout: $89.80
         """
         try:
-            results = await publish_listings(self.stockx, items)
+            results = await publish_listings(self.stockx, items, self.currency)
         except StockXIncompleteOperation as e:
             results = e.partial_results
 
