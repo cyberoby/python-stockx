@@ -395,6 +395,9 @@ class Inventory:
 
             if not market_value:
                 return item.price # Keep current price
+            
+            if market_value == item.price:
+                return item.price # Should not beat itself
 
             if percentage:  
                 return market_value.amount * (1 - change)
