@@ -327,7 +327,7 @@ class Inventory:
             items: Iterable[ListedItem],
             new_price: Amount,
             condition: Condition = True,
-    ) -> Iterator[UpdateResult]:
+    ) -> list[UpdateResult]:
         """
         Update prices for items that meet the given condition.
 
@@ -342,7 +342,7 @@ class Inventory:
 
         Returns
         -------
-        `Iterator[UpdateResult]`
+        `list[UpdateResult]`
             Results of the price updates.
 
         Raises
@@ -363,13 +363,12 @@ class Inventory:
         ... )
         """
         items_to_update = []
-
         for item in items: 
             if await computed_value(item, condition):
                 # Change item's price if condition is met
-                new_price = await computed_value(item, new_price)
-                if new_price != item.price: # Avoid unnecessary updates
-                    item.price = new_price
+                change_to = await computed_value(item, new_price)
+                if change_to != item.price: # Avoid unnecessary updates
+                    item.price = change_to
                     items_to_update.append(item)
 
         # Avoid unnecessary updates when calling Inventory.update()
@@ -385,7 +384,7 @@ class Inventory:
             beat_by: Amount,
             percentage: bool,
             condition: Condition,
-    ) -> Iterator[UpdateResult]:
+    ) -> list[UpdateResult]:
         # Define a new price function depending on market data
         async def new_price(item: ListedItem) -> float:
             change = await computed_value(item, beat_by)
@@ -412,7 +411,7 @@ class Inventory:
             beat_by: Amount = 1,
             percentage: bool = False,
             condition: Condition = True,
-    ) -> Iterator[UpdateResult]:
+    ) -> list[UpdateResult]:
         """
         Beat the Lowest Ask by a given amount and if condition is met.
 
@@ -432,7 +431,7 @@ class Inventory:
 
         Returns
         -------
-        `Iterator[UpdateResult]`
+        `list[UpdateResult]`
             Results of the price updates.
 
         Raises
@@ -457,7 +456,7 @@ class Inventory:
             beat_by: Amount = 0,
             percentage: bool = False,
             condition: Condition = True,
-    ) -> Iterator[UpdateResult]:
+    ) -> list[UpdateResult]:
         """
         Like `beat_lowest_ask`, but targets StockX's "Sell Faster" price suggestion.
         See `beat_lowest_ask` for parameter details.
@@ -476,7 +475,7 @@ class Inventory:
             beat_by: Amount = 0,
             percentage: bool = False,
             condition: Condition = True,
-    ) -> Iterator[UpdateResult]:
+    ) -> list[UpdateResult]:
         """
         Like `beat_lowest_ask`, but targets StockX's "Earn More" price suggestion.
         See `beat_lowest_ask` for parameter details.
@@ -493,7 +492,7 @@ class Inventory:
             self, 
             items: Iterable[ListedItem],
             condition: Condition = True,
-    ) -> Iterator[UpdateResult]:
+    ) -> list[UpdateResult]:
         """Accept the highest bid for items meeting the given condition."""
         return await self._beat_market_value(
             items=items, 
