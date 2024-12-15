@@ -18,6 +18,7 @@ from .results import UpdateResult
 from ..item import Item, ListedItem
 from ....api import StockX
 from ....errors import StockXBatchTimeout, StockXIncompleteOperation
+from ....models import BatchItemStatus
 
 if TYPE_CHECKING:
     from ....models import (
@@ -326,7 +327,7 @@ async def _batch_results(
     for batch_id in batch_ids:
         results = await get_items(batch_id)
         for result in results:
-            if result.status != 'QUEUED':
+            if result.status != BatchItemStatus.QUEUED:
                 batch_results.append(result)
 
     if timeout_error:

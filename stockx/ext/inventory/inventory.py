@@ -19,7 +19,7 @@ from ..mock import mock_listing
 from ...api import StockX
 from ...errors import StockXIncompleteOperation
 from ...logging import logger
-from ...models import Currency
+from ...models import Currency, ListingStatus
 from ...types_ import ComputedValue, computed_value
 
 if TYPE_CHECKING:
@@ -140,7 +140,7 @@ class Inventory:
             If unable to load fees. Default fees applied.
         """
         async for listing in self.stockx.listings.get_all_listings(
-            listing_statuses=['ACTIVE'],
+            listing_statuses=[ListingStatus.ACTIVE],
             limit=100,
             page_size=100,
         ):
@@ -236,7 +236,7 @@ class Inventory:
     def register_quantity_change(self, item: ListedItem) -> None:
         self._quantity_updates.add(item)
 
-    async def update(self) -> Iterator[UpdateResult]:
+    async def update(self) -> list[UpdateResult]:
         """Apply all pending price and quantity changes."""
         quantity_results = []
         price_results = []
@@ -265,7 +265,7 @@ class Inventory:
         self._price_updates.clear()
         self._quantity_updates.clear()
 
-        results = UpdateResult.consolidate(quantity_results, price_results)
+        results = list(UpdateResult.consolidate(quantity_results, price_results))
 
         if timed_out_batch_ids:
             raise StockXIncompleteOperation(
@@ -274,7 +274,7 @@ class Inventory:
                 timed_out_batch_ids=timed_out_batch_ids
             )
         
-        return results
+        return results   
     
     async def sell(self, items: Iterable[Item]) -> list[ListedItem]:
         """
