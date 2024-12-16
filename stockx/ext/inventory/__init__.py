@@ -60,13 +60,15 @@ Using async functions:
 """
 
 from .batch.results import ErrorDetail, UpdateResult
-from .inventory import Inventory
+from .inventory import Amount, Condition, Inventory
 from .item import Item, ListedItem
 from .market import ItemMarketData, MarketValue
 from .query import ItemsQuery
 
 
 __all__ = (
+    'Amount',
+    'Condition',
     'ErrorDetail',
     'Inventory',
     'Item',
