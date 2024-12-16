@@ -168,6 +168,8 @@ class ListedItem:
     style_id : `str`
     size : `str`
     name : `str`
+    inventory : `Inventory`
+    currency : `Currency`
 
     Methods
     -------
@@ -294,6 +296,11 @@ class ListedItem:
     def name(self) -> str | None:
         """The product name (if available)."""
         return self._name
+    
+    @property
+    def inventory(self) -> Inventory:
+        """The inventory this item belongs to."""
+        return self._inventory
     
     @property
     def currency(self) -> Currency:
