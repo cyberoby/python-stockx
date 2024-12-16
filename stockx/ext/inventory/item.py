@@ -8,6 +8,7 @@ from ...models import Listing
 
 if TYPE_CHECKING:
     from .inventory import Inventory
+    from .market import ItemMarketData
     from ...api import StockX
     from ...models import Currency
 
@@ -316,6 +317,10 @@ class ListedItem:
     def payout(self) -> float:
         """Calculated payout amount for this item."""
         return self._inventory.calculate_payout(self.price)
+    
+    async def market_data(self) -> ItemMarketData:
+        """Fetch the market data for this item."""
+        return await self.inventory.get_item_market_data(self)
     
     def __repr__(self) -> str:
         return (
