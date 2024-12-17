@@ -61,7 +61,6 @@ class StockX:
         if self._initialized:
             return
 
-        logger.info('Logging in to StockX API...')
         await self.client.initialize()
 
         self._batch = Batch(self.client)
@@ -70,7 +69,6 @@ class StockX:
         self._orders = Orders(self.client)
 
         self._initialized = True
-        logger.info('StockX API successfully logged in.')
 
     async def __aenter__(self) -> StockX:
         await self.login()
@@ -100,7 +98,6 @@ class StockX:
         if self.client:
             try:
                 await self.client.close()
-                logger.info('Successfully logged out of StockX API.')
             except Exception as e:
                 logger.error(f'Error while logging out of StockX API: {e}')
             finally:
