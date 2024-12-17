@@ -2,7 +2,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from ..api import StockX 
-from ..logging import logger
+from ..logs import logger
 from ..models import Currency, ListingDetail
 
 

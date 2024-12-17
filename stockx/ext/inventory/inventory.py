@@ -18,7 +18,7 @@ from .query import create_items_query
 from ..mock import mock_listing
 from ...api import StockX
 from ...errors import StockXIncompleteOperation
-from ...logging import logger
+from ...logs import logger
 from ...models import Currency, ListingStatus
 from ...types_ import ComputedValue, computed_value
 
@@ -123,7 +123,6 @@ class Inventory:
             return True
         except Exception as e:
             logger.error(f'Error during Inventory exit: {e}')
-            raise e
             return False 
         return False
 

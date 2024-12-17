@@ -9,6 +9,7 @@ from ...errors import (
     StockXNotInitialized,
     stockx_request_error,
 )
+from ...logs import logger
 from ...models import Response
 from ...types_ import JSON, Params
 
@@ -72,10 +73,12 @@ class StockXAPIClient:
 
     async def initialize(self) -> None:
         """Initialize and login client."""
+        logger.info('Initializing StockX API client...')
         if not self._session and not self._refresh_task:
             self._session = aiohttp.ClientSession()
             self._refresh_task = asyncio.create_task(self._refresh_token())
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
+            logger.info('StockX API client successfully initialized.')
 
     async def close(self) -> None:
         """Close client session."""
@@ -83,7 +86,8 @@ class StockXAPIClient:
             await self._session.close()
         if self._refresh_task:
             self._refresh_task.cancel()
-        
+        logger.info('StockX API client closed.')
+
     async def get(self, endpoint: str, params: Params | None = None) -> Response:
         """Perform `GET` request."""
         return await self._do('GET', endpoint, params=params)
@@ -148,6 +152,7 @@ class StockXAPIClient:
             
     async def _refresh_token(self) -> None:
         while True:
+            logger.info('Refreshing StockX API token...')
             headers = {'Content-Type': 'application/x-www-form-urlencoded'}
             auth_data = {
                 'grant_type': GRANT_TYPE,
@@ -165,7 +170,8 @@ class StockXAPIClient:
                     'Authorization': f'Bearer {token}',
                     'x-api-key': self.x_api_key
                 }
-                
+                logger.info('StockX API token successfully refreshed.')
+
             await asyncio.sleep(REFRESH_TOKEN_SLEEP)
         
             
