@@ -118,7 +118,7 @@ class Listings(StockXAPIBase):
     ) -> Operation:
         """Update a listing."""
         data = {
-            'amount': f'{amount:.0f}',
+            'amount': f'{amount:.0f}' if amount else None,
             'currencyCode': currency.value if currency else None,
             'expiresAt': iso(expires_at),
         }
