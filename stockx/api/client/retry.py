@@ -4,6 +4,7 @@ from functools import wraps
 from typing import Any, TypeVar
 
 from ...errors import StockXRequestError
+from ...logs import logger
 
 
 T = TypeVar('T')
@@ -42,6 +43,7 @@ class _RetryDecorator:
                         break
                     
                     sleep = min(self.delay(attempt), self.timeout - waited)
+                    logger.warn(f'Retrying in {sleep} seconds...')
                     await asyncio.sleep(sleep)
                     waited += sleep
             raise last_error
