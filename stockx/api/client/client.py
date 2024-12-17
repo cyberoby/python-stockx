@@ -145,13 +145,13 @@ class StockXAPIClient:
                     message=data.get('errorMessage', None), 
                     status_code=response.status
                 )
-                logger.warn(e)
+                logger.error(e)
                 raise e
         except aiohttp.ClientResponseError as e:
-            logger.warn(e)
+            logger.error(e)
             raise stockx_request_error(e.message, e.status) from e
         except aiohttp.ClientError as e:
-            logger.warn(e)
+            logger.error(e)
             raise stockx_request_error('Request failed.') from e
             
     async def _refresh_token(self) -> None:
