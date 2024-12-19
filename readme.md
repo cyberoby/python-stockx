@@ -2,7 +2,9 @@
 
 An async Python SDK for interacting with the StockX API, providing both low-level endpoint mappings and high-level inventory management abstractions.
 
-> ⚠️ This SDK is under active development
+> ⚠️ This SDK is under active development.
+> ⚠️ `python-stockx` is in no way endorsed by or affiliated with StockX or any associated organization. Make sure to read and understand the
+> [StockX API Terms of Service](https://developer.stockx.com/portal/license-agreement/) before using this package.
 
 The SDK has two layers: 
 - `stockx`: low-level API client for easy access to StockX API endpoints
