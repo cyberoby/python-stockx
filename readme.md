@@ -261,11 +261,13 @@ Results are cached indefinitely to reduce the number of requests to the API.
 #### Search for a product by SKU
 
 ```python
->>> product = await product_by_sku(stockx, 'CW2288-111')
+>>> from stockx.ext import search
+...
+>>> product = await search.product_by_sku(stockx, 'CW2288-111')
 >>> print(product.name)
 Nike Air Force 1 '07 Triple White
 
->>> product = await product_by_sku(stockx, 'JABBERWOCKY')
+>>> product = await search.product_by_sku(stockx, 'JABBERWOCKY')
 >>> print(product)
 None
 ```
