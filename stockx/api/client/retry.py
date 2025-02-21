@@ -61,7 +61,7 @@ def retry(
         initial_delay: float = 1.0,
         timeout: float = 60.0,
 ) -> _RetryDecorator:
-    """Create a decorator that retries failed API calls with exponential backoff.
+    """Decorator that retries failed API calls with exponential backoff.
     
     Parameters
     ----------
@@ -71,11 +71,6 @@ def retry(
         Initial delay between retries in seconds
     timeout : `float`
         Maximum total time to spend retrying in seconds
-        
-    Returns
-    -------
-    `_RetryDecorator`
-        Configured retry decorator
         
     Examples
     --------
